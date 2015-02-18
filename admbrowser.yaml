@@ -5,7 +5,7 @@
 # This is the "home page" for your kiosk.  It will start here, and return here if reset
 # Default: about:blank
 
-start_url: "http://library.williamson-tn.org"
+start_url: "http://www.alandmoore.com"
 
 # The "whitelist" is a list of domains or hosts which will be matched against any requested url.
 # If the hostname or domain name doesn't match an item on the list, the user gets the "Cannot go there" message
@@ -187,10 +187,10 @@ icon_theme:  "oxygen"
 
 #user_agent: "Firefox IE WebKit Chrome Mosaic Navigator"
 
-# user_css allows a custom CSS file to be applied to each page WCGBrowser visits. Accepts any URL supported by QT
+# user_css allows a custom CSS file to be applied to each page ADMBrowser visits. Accepts any URL supported by QT
 # Default: none
 
-#user_css: file://etc/wcgbrowser.css
+#user_css: file://etc/admbrowser.css
 
 # Bookmarks are set in this structure.  They will appear as buttons on the top navigation bar.
 # Each bookmark entry takes this form (note the indentation):
@@ -216,24 +216,18 @@ icon_theme:  "oxygen"
 
 bookmarks:
   1:
-    name: "Catalog &Home"
-    url: "http://library.williamson-tn.org"
-    description:  "Williamson County Public Library INNOPAC search"
+    name: "Alan D Moore"
+    url: "http://www.alandmoore.com"
+    description:  "Author's web site."
 
   2:
-    name: "&KidsOnline Catalog"
-    url: "http://library.williamson-tn.org:90"
-    description:  "KidsOnline catalog"
+    name: "&Lykwyd Chykyn"
+    url: "http://www.alandmoore.com/lc"
+    description:  "The author's music."
   3:
-    name: "Computer &Guest"
-    url:  "https://library.williamson-tn.org/selfreg/webcomp"
-    description:  "Computer Guest Pass Application"
-
-  4:
-    name: "Commission Forum"
-    url: "http://www.williamson-tn.org/commission"
-    description:  "County Commission Public Forum"
-
+    name: "ADM &Github"
+    url:  "https://github.com/alandmoore"
+    description:  "The author's github site"
 
 # External Content
 # If allow_external_content is set to True, clicking a link to an un-renderable MIME-type (PDF, for example)

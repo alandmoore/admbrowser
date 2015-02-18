@@ -1,76 +1,45 @@
 #!/usr/bin/python
 """
-This is the main script for WCGBrowser, a kiosk-oriented web browser
+This is the main script for ADMBrowser, a kiosk-oriented web browser
 Written by Alan D Moore, http://www.alandmoore.com
 Released under the GNU GPL v3
 """
 
 # QT Binding imports
 
-while True:
-    # This is a little odd, but seemed cleaner than
-    # progressively nesting try/except blocks.
-    try:
-        """Try to import PyQt5"""
-        from PyQt5.QtGui import QIcon, QKeySequence
-        from PyQt5.QtCore import (
-            QUrl, QTimer, QObject, QT_VERSION_STR, QEvent,
-            Qt, QTemporaryFile, QDir, QCoreApplication, qVersion, pyqtSignal,
-            QSizeF
-        )
-        from PyQt5.QtWebKit import QWebSettings
-        from PyQt5.QtWidgets import (
-            QMainWindow, QAction, QWidget, QApplication, QSizePolicy,
-            QToolBar, QDialog, QMenu
-        )
-        from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
-        from PyQt5.QtWebKitWidgets import QWebView, QWebPage
-        from PyQt5.QtNetwork import (QNetworkRequest, QNetworkAccessManager,
-                                     QNetworkProxy)
-        break
-    except ImportError as e:
-        print("QTt5 import error")
-        pass
-    try:
-        """If not PyQt5, try PyQt4"""
-        from PyQt4.QtGui import (
-            QMainWindow, QAction, QIcon, QWidget,
-            QApplication, QSizePolicy, QKeySequence, QToolBar, QPrinter,
-            QPrintDialog, QDialog, QMenu
-        )
-        from PyQt4.QtCore import (
-            QUrl, QTimer, QObject, QT_VERSION_STR, QEvent,
-            Qt, QTemporaryFile, QDir, QCoreApplication, qVersion, pyqtSignal
-        )
-        from PyQt4.QtWebKit import QWebView, QWebPage, QWebSettings
-        from PyQt4.QtNetwork import (
-            QNetworkRequest, QNetworkAccessManager, QNetworkProxy
-        )
-        break
-    except ImportError:
-        pass
-    try:
-        """If not PyQT, try PySide"""
-        from PySide.QtGui import (
-            QMainWindow, QAction, QIcon, QWidget,
-            QApplication, QSizePolicy, QKeySequence, QToolBar, QPrinter,
-            QPrintDialog, QDialog, QMenu
-        )
-        from PySide.QtCore import (
-            QUrl, QTimer, QObject, QEvent, Qt, QTemporaryFile,
-            QDir, QCoreApplication, qVersion, pyqtSignal
-        )
-        from PySide.QtWebKit import QWebView, QWebPage, QWebSettings
-        from PySide.QtNetwork import (
-            QNetworkRequest, QNetworkAccessManager, QNetworkProxy
-        )
-        QT_VERSION_STR = qVersion()
-        break
-    except ImportError as e:
-        print("You don't seem to have a QT library installed;"
-              " please install PyQT or PySide.")
-        exit(1)
-
+from PyQt5.QtGui import QIcon, QKeySequence
+from PyQt5.QtCore import (
+    QUrl,
+    QTimer,
+    QObject,
+    QT_VERSION_STR,
+    QEvent,
+    Qt,
+    QTemporaryFile,
+    QDir,
+    QCoreApplication,
+    pyqtSignal,
+    QSizeF
+)
+from PyQt5.QtWidgets import (
+    QMainWindow,
+    QAction,
+    QWidget,
+    QApplication,
+    QSizePolicy,
+    QToolBar,
+    QDialog,
+    QMenu
+)
+from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
+from PyQt5.QtWebEngineWidgets import (
+    QWebEngineView,
+    QWebEnginePage,
+    QWebEngineSettings
+)
+from PyQt5.QtNetwork import (
+    QNetworkRequest
+)
 
 # Standard library imports
 import sys
@@ -352,7 +321,7 @@ class MainWindow(QMainWindow):
         self.screensaver_active = False
 
         # ##Start GUI configuration## #
-        self.browser_window = WcgWebView(self.config)
+        self.browser_window = AdmWebView(self.config)
         self.browser_window.setObjectName("web_content")
 
         if (
@@ -390,10 +359,10 @@ class MainWindow(QMainWindow):
 
             #  Standard navigation tools
             self.nav_items = {}
-            self.nav_items["back"] = self.browser_window.pageAction(QWebPage.Back)
-            self.nav_items["forward"] = self.browser_window.pageAction(QWebPage.Forward)
-            self.nav_items["refresh"] = self.browser_window.pageAction(QWebPage.Reload)
-            self.nav_items["stop"] = self.browser_window.pageAction(QWebPage.Stop)
+            self.nav_items["back"] = self.browser_window.pageAction(QWebEnginePage.Back)
+            self.nav_items["forward"] = self.browser_window.pageAction(QWebEnginePage.Forward)
+            self.nav_items["refresh"] = self.browser_window.pageAction(QWebEnginePage.Reload)
+            self.nav_items["stop"] = self.browser_window.pageAction(QWebEnginePage.Stop)
             # The "I'm finished" button.
             self.nav_items["quit"] = self.createAction(
                 self.config.get("quit_button_text"),
@@ -511,7 +480,7 @@ class MainWindow(QMainWindow):
         'reset' mode.
         """
         # Clear out the memory cache
-        QWebSettings.clearMemoryCaches()
+        #QWebEngineSettings.clearMemoryCaches()
         self.browser_window.history().clear()
         # self.navigation_bar.clear() doesn't do its job,
         # so remove the toolbar first, then rebuild the UI.
@@ -598,7 +567,7 @@ class InactivityFilter(QTimer):
         return QObject.eventFilter(self, object, event)
 
 
-class WcgWebView(QWebView):
+class AdmWebView(QWebEngineView):
     """This is the webview for the application.
 
     It represents a browser window, either the main one or a popup.
@@ -606,40 +575,30 @@ class WcgWebView(QWebView):
     """
     def __init__(self, config, parent=None, **kwargs):
         """Constructor for the class"""
-        super(WcgWebView, self).__init__(parent)
+        super(AdmWebView, self).__init__(parent)
         self.kwargs = kwargs
         self.config = config
-        self.nam = (config.get('networkAccessManager')
-                    or QNetworkAccessManager())
-        self.setPage(WCGWebPage())
+        self.setPage(AdmWebPage())
         self.page().user_agent = config.get('user_agent', None)
-        self.page().setNetworkAccessManager(self.nam)
         self.page().force_js_confirm = config.get("force_js_confirm")
         self.settings().setAttribute(
-            QWebSettings.JavascriptCanOpenWindows,
+            QWebEngineSettings.JavascriptCanOpenWindows,
             config.get("allow_popups")
         )
         if config.get('user_css'):
             self.settings().setUserStyleSheetUrl(QUrl(config.get('user_css')))
-        # JavascriptCanCloseWindows is in the API documentation,
-        # but apparently only exists after 4.8
-        if QT_VERSION_STR >= '4.8':
-            self.settings().setAttribute(
-                QWebSettings.JavascriptCanCloseWindows,
-                config.get("allow_popups")
-            )
-        self.settings().setAttribute(
-            QWebSettings.PrivateBrowsingEnabled,
-            config.get("privacy_mode")
-        )
-        self.settings().setAttribute(QWebSettings.LocalStorageEnabled, True)
-        self.settings().setAttribute(
-            QWebSettings.PluginsEnabled,
-            config.get("allow_plugins")
-        )
-        self.page().setForwardUnsupportedContent(
-            config.get("allow_external_content")
-        )
+        #self.settings().setAttribute(
+        #    QWebEngineSettings.PrivateBrowsingEnabled,
+        #    config.get("privacy_mode")
+        #)
+        self.settings().setAttribute(QWebEngineSettings.LocalStorageEnabled, True)
+        #self.settings().setAttribute(
+        #    QWebEngineSettings.PluginsEnabled,
+        #    config.get("allow_plugins")
+        #)
+        #self.page().setForwardUnsupportedContent(
+        #    config.get("allow_external_content")
+        #)
         self.setZoomFactor(config.get("zoom_factor"))
 
         # add printing to context menu if it's allowed
@@ -657,18 +616,19 @@ class WcgWebView(QWebView):
             else:
                 proxyhost = config["proxy_server"]
                 proxyport = 8080
-            self.nam.setProxy(QNetworkProxy(
-                QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
-            ))
+            # Not sure how to set proxy server for QWebEngineView??
+            #self.nam.setProxy(QNetworkProxy(
+            #    QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
+            #))
 
-        # connections for wcgwebview
-        self.page().networkAccessManager().authenticationRequired.connect(
+        # connections for admwebview
+        self.page().authenticationRequired.connect(
             self.auth_dialog
         )
-        self.page().unsupportedContent.connect(self.handle_unsupported_content)
-        self.page().networkAccessManager().sslErrors.connect(
-            self.sslErrorHandler
-        )
+        #self.page().unsupportedContent.connect(self.handle_unsupported_content)
+        #self.page().sslErrors.connect(
+        #    self.sslErrorHandler
+        #)
         self.urlChanged.connect(self.onLinkClick)
         self.loadFinished.connect(self.onLoadFinished)
 
@@ -680,7 +640,7 @@ class WcgWebView(QWebView):
         Overridden from QWebView to allow for popup windows, if enabled.
         """
         if self.config.get("allow_popups"):
-            self.popup = WcgWebView(
+            self.popup = AdmWebView(
                 None,
                 self.config,
                 networkAccessManager=self.nam,
@@ -706,8 +666,8 @@ class WcgWebView(QWebView):
         """
         menu = QMenu(self)
         for action in [
-                QWebPage.Back, QWebPage.Forward,
-                QWebPage.Reload, QWebPage.Stop
+                QWebEnginePage.Back, QWebEnginePage.Forward,
+                QWebEnginePage.Reload, QWebEnginePage.Stop
         ]:
             action = self.pageAction(action)
             if action.isEnabled():
@@ -855,7 +815,7 @@ class WcgWebView(QWebView):
     def onLoadFinished(self, ok):
         """Handle loadFinished events.
 
-        Overridden from QWebView.
+        Overridden from QWebEngineView.
         This function is called when a page load finishes.
         We're checking to see if the load was successful;
         if it's not, we display either the 404 error (if
@@ -939,25 +899,25 @@ class WcgWebView(QWebView):
         self.print_(printer)
         return True
 
-# ### END WCGWEBVIEW DEFINITION ### #
+# ### END ADMWEBVIEW DEFINITION ### #
 
-# ### WCGWEBPAGE #### #
+# ### ADMWEBPAGE #### #
 
 
-class WCGWebPage(QWebPage):
-    """Subclassed QWebPage representing the actual web page object in the browser.
+class AdmWebPage(QWebEnginePage):
+    """Subclassed QWebEnginePage representing the actual web page object in the browser.
 
     This was subclassed so that some functions can be overridden.
     """
     def __init__(self, parent=None):
         """Constructor for the class"""
-        super(WCGWebPage, self).__init__(parent)
+        super(AdmWebPage, self).__init__(parent)
         self.user_agent = None
 
     def javaScriptConsoleMessage(self, message, line, sourceid):
         """Handle console.log messages from javascript.
 
-        Overridden from QWebPage so that we can
+        Overridden from QWebEnginePage so that we can
         send javascript errors to debug.
         """
         debug('Javascript Error in "{}" line {}: {}'.format(
@@ -967,7 +927,7 @@ class WCGWebPage(QWebPage):
     def javaScriptConfirm(self, frame, msg):
         """Handle javascript confirm() dialogs.
 
-        Overridden from QWebPage so that we can (if configured)
+        Overridden from QWebEnginePage so that we can (if configured)
         force yes/no on these dialogs.
         """
         if self.force_js_confirm == "accept":
@@ -975,21 +935,21 @@ class WCGWebPage(QWebPage):
         elif self.force_js_confirm == "deny":
             return False
         else:
-            return QWebPage.javaScriptConfirm(self, frame, msg)
+            return QWebEnginePage.javaScriptConfirm(self, frame, msg)
 
     def javaScriptAlert(self, frame, msg):
         if not self.suppress_alerts:
-            return QWebPage.javaScriptAlert(self, frame, msg)
+            return QWebEnginePage.javaScriptAlert(self, frame, msg)
 
     def userAgentForUrl(self, url):
         """Handle reqests for the browser's user agent
 
-        Overridden from QWebPage so we can force a user agent from the config.
+        Overridden from QWebEnginePage so we can force a user agent from the config.
         """
-        return self.user_agent or QWebPage.userAgentForUrl(self, url)
+        return self.user_agent or QWebEnginePage.userAgentForUrl(self, url)
 
 
-# ### END WCGWEBPAGE DEFINITION ### #
+# ### END ADMWEBPAGE DEFINITION ### #
 
 # ######## Main application code begins here ################## #
 
@@ -999,10 +959,10 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
 
     # locate the configuration file to use.
-    if os.path.isfile(os.path.expanduser("~/.wcgbrowser.yaml")):
-        default_config_file = os.path.expanduser("~/.wcgbrowser.yaml")
-    elif os.path.isfile("/etc/wcgbrowser.yaml"):
-        default_config_file = "/etc/wcgbrowser.yaml"
+    if os.path.isfile(os.path.expanduser("~/.admbrowser.yaml")):
+        default_config_file = os.path.expanduser("~/.admbrowser.yaml")
+    elif os.path.isfile("/etc/admbrowser.yaml"):
+        default_config_file = "/etc/admbrowser.yaml"
     else:
         default_config_file = None
 

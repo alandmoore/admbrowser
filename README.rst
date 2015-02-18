@@ -1,5 +1,5 @@
 ============
- WCGBrowser
+ ADMBrowser
 ============
 
 Author:  Alan D Moore (http://www.alandmoore.com, e-mail me_AT_alandmoore_DOT_com)
@@ -12,9 +12,18 @@ Contributors:
 Description
 ===========
 
-WCGBrowser is a browser I wrote specifically for use on web kiosks.  It's based on pyqt and webkit, and is designed to make lock-down very simple and painless.
+ADMBrowser is a browser specifically for use on web kiosks.  It's based on pyqt and QWebEngine (Blink), and is designed to make lock-down very simple and painless.
 
 It was originally conceived for use in library catalog terminals, when it became clear that browsers with ever-growing feature lists like Firefox and Chrome were too much work to lock down correctly and completely.  It was also designed to be easily configurable using a simple text file that can be hand-edited in a terminal over ssh across a slow WAN, so no databases, XML, or crazy binaries here.
+
+ADMBrowser is a fork of WCGBrowser, with these key differences:
+
+- WCGBrowser was based on QtWebKit, ADMBrowser is based on QtWebEngine
+- WCGBrowser supports Python2 and Python3.  ADMBrowser will only actively support Python3.
+- The command line and configuration syntax may differ slightly.
+
+*ADMBROWSER IS CURRENTLY ALPHA QUALITY*  Many features are broken or unavailable simply because QtWebEngine is young and does things differently than QtWebKit.
+
 
 Features
 ========
@@ -35,18 +44,16 @@ Features
 Requirements
 ============
 
-- Python 2.6 or higher (should work with python 3.x)
-- PyQT4 OR PySide, preferably for QT 4.6 or higher
+- Python 3
+- PyQT5 (v.5.4 or higher)
 - Python YAML library (http://pyyaml.org)
-- Python argparse library
 
-It should work on any platform, but it's only been tested on Debian (Squeeze) and Ubuntu (Lucid Lynx or higher).  PyQT was the original development platform and the program will prefer it if it's installed, but it should "Just Work™" with PySide too (PySide is easier to setup in virtualenv).
-
+It should work on any platform, but it's only been tested on Arch Linux.  
 
 Usage
 =====
 
-The included wcgbrowser.yaml file shows an actual configuration that I use at our public library system.  To use it,  copy it to /etc/wcgbrowser.yaml, ~/.wcgbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
+The included admbrowser.yaml file shows an actual configuration that I use at our public library system.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
 
     python browser.py
 
@@ -74,7 +81,7 @@ At a minimum, you need to specify a "start url" using either the config file or 
 -z, --zoom              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
 ====================    =====================================================================================================================================
 
-Wcgbrowser also accepts the built-in qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at http://doc.qt.digia.com/qt/qapplication.html#QApplication.
+ADMBrowser also accepts the built-in qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at http://doc.qt.digia.com/qt/qapplication.html#QApplication.
 
 Configuration File
 ==================
@@ -84,8 +91,8 @@ The sample configuration file is fully commented, and should be pretty easy to c
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 Option Name            Default Value      Explanation
 ====================== ===============    ===============================================================================================================================================================================================================================================================
-allow_external_content False              Whether or not to allow non-html content, e.g. PDF files.  If this is true, you need to specify a content handler for the MIME type or a 404 error, "Network Error", or blank page will likely be displayed to the user.
-allow_plugins          False              If true, enables the use of plugins like flash, java, etc.
+allow_external_content False              *CURRENTLY BROKEN* Whether or not to allow non-html content, e.g. PDF files.  If this is true, you need to specify a content handler for the MIME type or a 404 error, "Network Error", or blank page will likely be displayed to the user.
+allow_plugins          False              *CURRENTLY BROKEN* If true, enables the use of plugins like flash, java, etc.
 allow_popups           False              Whether or not to allow navigation that requires opening a new browser window, such as javascript "window.open()" calls or links with a target of "_blank".  If False, the navigation will be ignored.  If true, a new window will be created as expected.
 force_js_confirm       "ask"              If set to "accept" or "deny", will override any JavaScript are-you-sure-you-want-to-exit dialog boxes with the specified answer, if set to "ask" (the default) will ask the user each time.
 suppress_alerts        False              If True, blocks JavaScript popup alerts from appearing, or shows them when False.
@@ -98,14 +105,14 @@ navigation             True               Display the navigation bar at the top 
 navigation_layout      (see below)        Sets the layout of the navigation bar.  See the detailed explanation below.
 network_down_html      (empty)            The full path to a file containing HTML which will be displayed when the start_url page cannot be loaded, which probably indicates some kind of network error.
 page_unavailable_html  (empty)            The full path to a file containing HTML which will be displayed when a page cannot be loaded, either because it's not accessible or blocked by security restrictions.
-privacy_mode           True               Enable or disable "private browsing mode" on the webkit widget.
+privacy_mode           True               *CURRENTLY BROKEN* Enable or disable "private browsing mode" on the webkit widget.
 user_agent             (qt5 default)      Overrides the default user agent string.
 user_css               (empty)            Sets a default CSS file applied to all pages viewed. Option accepts any URL supported by QT, i.e: "file://etc/wcg.css" or "http://example.com/style.css".
-proxy_server           (empty)            Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
+proxy_server           (empty)            *CURRENTLY BROKEN* Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
 quit_button_mode       reset              Just like timeout_mode, only this is the action taken when the quit button is pressed (same options)
 quit_button_text       "I'm &Finished"    Text to display on the quit/reset button.  Can include an accelerator indicator (&).
 screensaver_url        about:blank        The URL to visit when idle.  Only matters when timeout_mode is 'screensaver' and 'timeout' is nonzero.
-ssl_mode               strict             Defines how the browser handles ssl certificate errors.  "strict" will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
+ssl_mode               strict             *CURRENTLY BROKEN* Defines how the browser handles ssl certificate errors.  "strict" will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
 start_url              about:blank        The starting URL or "home page"
 stylesheet             (empty)            Filename of a qss stylesheet to use for styling the application window.  See example file.
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
@@ -143,6 +150,8 @@ This is more compact, but the downside is that you have no control over the orde
 Content Handlers
 ----------------
 
+*CURRENTLY BROKEN*
+
 If you're allowing external content to be launched, the "content_handlers" array allows you to specify in which programs the external content will open by MIME type.
 The syntax looks like this::
 
@@ -150,7 +159,7 @@ The syntax looks like this::
       "application/pdf": "xpdf"
       "application/vnd.oasis.opendocument.text":"libreoffice"
 
-WCGBrowser will download the file to a temp directory and pass it as an argument to whatever command you specify in the second column.
+ADMBrowser will download the file to a temp directory and pass it as an argument to whatever command you specify in the second column.
 Be aware of this, as in some cases you might want to write a wrapper script of some sort to deal with some types of files or programs that don't properly deal with arguments.
 
 
@@ -228,7 +237,9 @@ The screensaver_url could be, for example, an image rotator, a page with ads, a 
 Proxy Server
 ------------
 
-WCGBrowser will allow you to set a host (name or IP) and port number for an HTTP proxy.  HTTPS, FTP, SOCKS, or authenticated proxy is not currently supported.  You can set the proxy settings one of three ways:
+*CURRENTLY BROKEN*
+
+ADMBrowser will allow you to set a host (name or IP) and port number for an HTTP proxy.  HTTPS, FTP, SOCKS, or authenticated proxy is not currently supported.  You can set the proxy settings one of three ways:
 
 - The environment variable "http_proxy" is respected
 - The CLI switch --proxy_server
@@ -245,7 +256,7 @@ If you neglect to include a port, and just put an IP address or hostname, the po
 Print Settings
 --------------
 
-WCGBrowser supports configuring default printer settings and allows printing without showing a dialog box. Options are set with the "print_settings" variable. For example::
+ADMBrowser supports configuring default printer settings and allows printing without showing a dialog box. Options are set with the "print_settings" variable. For example::
 
     print_settings:
         silent: True
@@ -257,7 +268,7 @@ The following options are supported:
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 Option Name            Default Value      Explanation
 ====================== ===============    ===============================================================================================================================================================================================================================================================
-silent                 False              When True, WCGBrowser will print immediately without showing the printing dialog box.
+silent                 False              When True, ADMBrowser will print immediately without showing the printing dialog box.
 orientation            "portrait"         Specifies printing in portrait or landscape orientation.
 size_unit              "millimeter"       Specifies what unit of measure used by the paper_size and margin variables. Can be "millimeter", "point", "inch", "pica", "didot", "cicero", or "devicepixel".
 margins                (printer default)  Specifies the printer margins as a list in the form: [left, top, right, bottom]. Example: [5, 3.5, 6, 2.4]. Units are specified by the size_unit variable.
@@ -273,7 +284,16 @@ Bugs and Limitations
 - There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
 - Mime type handling is a little rough still, and you're bound to get 404 or network errors attempting to download documents when it's disabled.
 
-If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/wcgbrowser/issues. If your "bug" is really a feature request, see below.
+If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/admbrowser/issues. If your "bug" is really a feature request, see below.
+
+The following issues showed up with the port from QtWebKit to QtWebEngine:
+
+- Proxy settings don't work.  There's no documented way to set a proxy server on QtWebEngine, that I've found.
+- "privacy_mode" doesn't work.  The option to enable privacy mode no longer exists in QtWebEngine.
+- Plugins can't be disabled.  Again, not a setting in QtWebEngine.
+- The handling of downloaded files is all broken.  There's not yet a way to do this in QtWebEngine.
+- Probably much more that hasn't been tested yet.
+
 
 Contributing
 ============
@@ -291,8 +311,8 @@ If you're contributing code, please follow these best practices:
   - This includes the 79 character limit.  Yes, I'm like that.
   - Use snake_case variables, not camelCase (except for PyQt stuff we can't change)
   - Use .format() rather than the old printf-style (%) substitution
-  - Remember that code should work in Py2.7 or Py3.x
-    and with PyQt4, PyQt5, or PySide  
+  - Remember that code should work in Py3.x with pyqt5
+
 - Please document per PEP257; functions & classes need a docstring.
 - Fork the project on GitHub, make your changes, and submit a pull request.
   You will probably be asked to change or fix some things,
@@ -313,4 +333,4 @@ If there are features you'd like to see supported in this project, you have thre
 License
 =======
 
-WCGBrowser is released under the terms of the GNU GPL v3.
+ADMBrowser is released under the terms of the GNU GPL v3.
