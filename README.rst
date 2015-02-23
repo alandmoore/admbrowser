@@ -63,12 +63,11 @@ At a minimum, you need to specify a "start url" using either the config file or 
  Switch                 Description
 ====================    =====================================================================================================================================
 --debug_log             Send debugging output to specified file
---size                  Set the initial window size as "<width>x<height>" (e.g. "800x600") or just "max" for maximized
+--size                  Set the initial window size as "<width>x<height>" (e.g. "800x600"), "max" for maximized, or "full" for full-screen.
 --proxy_server          Set the proxy server host and port, in the form <host>:<port>
 -c, --config-file       Specify a configuration file to use
 -d, --debug             Provide debugging output to stdout
 -e, --allow_external    Allow the browser to open content in external programs via MIME type
--f, --fullscreen        Makes the window fill the screen, no window decorations
 -g, --allow_plugins     Allow the use of plugins like Flash, Java, etc.
 -h, --help              Show quick help on command line syntax
 -i, --icon-theme        The icon theme to use.  You'll need to install these themes yourself
@@ -108,7 +107,7 @@ page_unavailable_html  (empty)            The full path to a file containing HTM
 privacy_mode           True               *CURRENTLY BROKEN* Enable or disable "private browsing mode" on the webkit widget.
 user_agent             (qt5 default)      Overrides the default user agent string.
 user_css               (empty)            Sets a default CSS file applied to all pages viewed. Option accepts any URL supported by QT, i.e: "file://etc/wcg.css" or "http://example.com/style.css".
-proxy_server           (empty)            *CURRENTLY BROKEN* Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
+proxy_server           (empty)            Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
 quit_button_mode       reset              Just like timeout_mode, only this is the action taken when the quit button is pressed (same options)
 quit_button_text       "I'm &Finished"    Text to display on the quit/reset button.  Can include an accelerator indicator (&).
 screensaver_url        about:blank        The URL to visit when idle.  Only matters when timeout_mode is 'screensaver' and 'timeout' is nonzero.
@@ -118,7 +117,7 @@ stylesheet             (empty)            Filename of a qss stylesheet to use fo
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
 timeout_mode           reset              The action performed on inactivity timeout.  Values can be "reset" (to return to the start URL and clear history), "close" (to close the program), or 'screensaver' (to display the screensaver_url while idle)
 whitelist              (empty)            A list of web domains or hosts to allow access to (see below).
-window_size            (empty)            If set, and if fullscreen is *not* set, make the window default to this size.  Can be <width>x<height> (e.g. 800x600) or 'max' for maximized.
+window_size            "max"            Make the window default to this size.  Can be <width>x<height> (e.g. 800x600), 'max' for maximized, or "full" for fullscreen.
 zoom_factor            1.0                The amount of zoom applied to pages.  .5 is half size, 2.0 is double size, etc.
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 
@@ -237,8 +236,6 @@ The screensaver_url could be, for example, an image rotator, a page with ads, a 
 Proxy Server
 ------------
 
-*CURRENTLY BROKEN*
-
 ADMBrowser will allow you to set a host (name or IP) and port number for an HTTP proxy.  HTTPS, FTP, SOCKS, or authenticated proxy is not currently supported.  You can set the proxy settings one of three ways:
 
 - The environment variable "http_proxy" is respected
@@ -252,6 +249,9 @@ To set the proxy server, use the format "host:port", as in these examples::
     192.168.1.1:8880
 
 If you neglect to include a port, and just put an IP address or hostname, the port 8080 will be used by default.
+
+**NOTE** This feature may not work on some OS. It currently relies on setting the http_proxy environment variable (regardless of which method you use to configure it), which may not be respected on all systems.  It definitely works on Linux, and probably on any unixlike system.
+
 
 Print Settings
 --------------

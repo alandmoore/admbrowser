@@ -55,6 +55,7 @@ import datetime
 # Just set it to a filename of the HTML you want to display.
 # It will be formatted agains the configuration file, so you can
 # include any config settings using {config_key_name}
+
 DEFAULT_404 = """<h2>Sorry, can't go there</h2>
 <p>This page is not available on this computer.</p>
 <p>You can return to the <a href='{start_url}'>start page</a>,
@@ -140,7 +141,6 @@ CONFIG_OPTIONS = {
     "default_user":           {"default": None, "type": str},
     "force_js_confirm":       {"default": "ask", "type": str,
                                "values": ("ask", "accept", "deny")},
-    "fullscreen":             {"default": False, "type": bool},
     "icon_theme":             {"default": None, "type": str},
     "navigation":             {"default": True, "type": bool},
     "navigation_layout":      {"default":
@@ -171,7 +171,7 @@ CONFIG_OPTIONS = {
     "user_agent":             {"default": None, "type": str},
     "user_css":               {"default": None, "type": str},
     "whitelist":              {"default": None},  # don't check type here
-    "window_size":            {"default": None},  # don't check type
+    "window_size":            {"default": "max", "type": str},
     "zoom_factor":            {"default": 1.0, "type": float}
 }
 
@@ -277,6 +277,11 @@ class MainWindow(QMainWindow):
                 )
         self.setObjectName("global")
 
+        # Set proxy server environment variable before creating web views
+        if self.config.get("proxy_server"):
+            os.environ["http_proxy"] = self.config.get("proxy_server")
+            os.environ["https_proxy"] = self.config.get("proxy_server")
+
         # If the whitelist is activated, add the bookmarks and start_url
         if self.config.get("whitelist"):
             # we can just specify whitelist = True,
@@ -332,12 +337,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.browser_window)
         debug("loading {}".format(self.config.get("start_url")))
         self.browser_window.setUrl(QUrl(self.config.get("start_url")))
-        if self.config.get("fullscreen"):
+        if self.config.get("window_size", '').lower == 'full':
             self.showFullScreen()
-        elif (
-            self.config.get("window_size") and
-            self.config.get("window_size").lower() == 'max'
-        ):
+        elif (self.config.get("window_size", '').lower() == 'max'):
             self.showMaximized()
         elif self.config.get("window_size"):
             size = re.match(r"(\d+)x(\d+)", self.config.get("window_size"))
@@ -417,7 +419,7 @@ class MainWindow(QMainWindow):
                             QKeySequence.mnemonic(bookmark_name),
                             None,
                             bookmark[1].get("description")
-                            )
+                        )
                         self.navigation_bar.addAction(button)
                         self.navigation_bar.widgetForAction(button).setObjectName("navigation_button")
                 else:
@@ -610,17 +612,17 @@ class AdmWebView(QWebEngineView):
             self.print_action.setToolTip("Print this web page")
 
         # Set up the proxy if there is one set
-        if config.get("proxy_server"):
-            if ":" in config["proxy_server"]:
-                proxyhost, proxyport = config["proxy_server"].split(":")
-            else:
-                proxyhost = config["proxy_server"]
-                proxyport = 8080
+        #if config.get("proxy_server"):
+        #    if ":" in config["proxy_server"]:
+        #        proxyhost, proxyport = config["proxy_server"].split(":")
+        #    else:
+        #        proxyhost = config["proxy_server"]
+        #        proxyport = 8080
             # Not sure how to set proxy server for QWebEngineView??
             #self.nam.setProxy(QNetworkProxy(
             #    QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
             #))
-
+            
         # connections for admwebview
         self.page().authenticationRequired.connect(
             self.auth_dialog
@@ -676,32 +678,14 @@ class AdmWebView(QWebEngineView):
             menu.addAction(self.print_action)
         menu.exec_(event.globalPos())
 
-    def sslErrorHandler(self, reply, errorList):
-        """Handle SSL errors in the browser.
-
-        Overridden from QWebView.
-        Called whenever the browser encounters an SSL error.
-        Checks the ssl_mode and responds accordingly.
-        """
-        if self.config.get("ssl_mode") == 'ignore':
-            reply.ignoreSslErrors()
-            debug("SSL error ignored")
-            debug(", ".join([str(error.errorString()) for error in errorList]))
-        else:
-            self.setHtml(
-                CERTIFICATE_ERROR.format(
-                    url=reply.url().toString(),
-                    start_url=self.config.get("start_url")
-                ))
-
-    def auth_dialog(self, reply, authenticator):
+    def auth_dialog(self, requestUrl, authenticator):
         """Handle requests for HTTP authentication
 
         This is called when a page requests authentication.
         It might be nice to actually have a dialog here,
         but for now we just use the default credentials from the config file.
         """
-        debug("Auth required on {}".format(reply.url().toString()))
+        debug("Auth required on {}".format(requestUrl.toString()))
         default_user = self.config.get("default_user")
         default_password = self.config.get("default_password")
         if (default_user):
@@ -833,7 +817,9 @@ class AdmWebView(QWebEngineView):
                 debug("Start Url doesn't seem to be available;"
                       " displaying error")
             else:
-                debug("404 on URL: {}" .format(self.url().toString()))
+                debug("load failed on URL: {}" .format(
+                    self.page().requestedUrl().toString())
+                )
                 self.setHtml(
                     self.config.get("page_unavailable_html")
                     .format(**self.config), QUrl()
@@ -899,6 +885,7 @@ class AdmWebView(QWebEngineView):
         self.print_(printer)
         return True
 
+
 # ### END ADMWEBVIEW DEFINITION ### #
 
 # ### ADMWEBPAGE #### #
@@ -948,6 +935,26 @@ class AdmWebPage(QWebEnginePage):
         """
         return self.user_agent or QWebEnginePage.userAgentForUrl(self, url)
 
+    def certificateError(self, error):
+        """Handle SSL errors in the browser.
+
+        Overridden from QWebEnginePage.
+        Called whenever the browser encounters an SSL error.
+        Checks the ssl_mode and responds accordingly.
+        Doesn't seem to get called in Qt 5.4
+        """
+        debug("certificate error")
+        if self.config.get("ssl_mode") == 'ignore':
+            debug("Certificate error ignored")
+            debug(error.errorDescription())
+            return True
+        else:
+            self.setHtml(
+                CERTIFICATE_ERROR.format(
+                    url=error.url().toString(),
+                    start_url=self.config.get("start_url")
+                ))
+
 
 # ### END ADMWEBPAGE DEFINITION ### #
 
@@ -971,10 +978,6 @@ if __name__ == "__main__":
     parser.add_argument(  # Start URL
         "-l", "--url", action="store", dest="start_url",
         help="Start browser at URL"
-    )
-    parser.add_argument(  # Full Screen
-        "-f", "--fullscreen", action="store_true", default=argparse.SUPPRESS,
-        dest="fullscreen", help="Start browser FullScreen"
     )
     parser.add_argument(  # No Navigation
         "-n", "--no-navigation", action="store_false", default=argparse.SUPPRESS,
@@ -1034,7 +1037,7 @@ if __name__ == "__main__":
     parser.add_argument(  # Window size
         "--size", action="store", dest="window_size", default=None,
         help="Specify the default window size in pixels (widthxheight),"
-        " or 'max' to maximize"
+        " 'max' to maximize, or 'full' for full-screen."
     )
     parser.add_argument(  # HTTP Proxy server
         "--proxy_server", action="store", dest="proxy_server", default=None,
