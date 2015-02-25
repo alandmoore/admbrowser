@@ -1,15 +1,20 @@
+#########################################################
+# This is the example configuration file for ADMBrowser #
+#########################################################
+
 # This file uses yaml syntax
 # Just like python, indentation is critical.  Use a good text editor to hack on this.
 
-
+# Start URL
 # This is the "home page" for your kiosk.  It will start here, and return here if reset
 # Default: about:blank
 
 start_url: "http://www.alandmoore.com"
 
+# Whitelist
 # The "whitelist" is a list of domains or hosts which will be matched against any requested url.
 # If the hostname or domain name doesn't match an item on the list, the user gets the "Cannot go there" message
-# see the readme file for more details on the whitelist's behavior
+# see the README file for more details on the whitelist's behavior.
 # The start_url host and bookmark hosts are automatically added to the whitelist.
 # To disable whitelist filtering, just comment out whitelist, leave it empty, or specify use "False" as the value.
 # To just whitelist the start_url host and bookmark url host(s), just put "True".
@@ -19,6 +24,7 @@ start_url: "http://www.alandmoore.com"
 #whitelist: True
 #whitelist: ["alandmoore.com", "my-content-host.example.com"]
 
+# Default User and Password
 # If your browser has to navigate to a password-protected site (e.g., htaccess), you can set a default
 # username and password to use.  The browser will silently send these whenever authentication is requested.
 
@@ -32,9 +38,10 @@ start_url: "http://www.alandmoore.com"
 
 #proxy_server: "192.168.1.1:3128"
 
-# Timeout will either clear the history and reset the homepage, or close the program
-# after this number of seconds of inactivity.
-# behavior is set with "timeout_mode" (see below)
+# Timeout
+
+# This is a length of time, in seconds.  If the controls are inactive for this
+# length of time, the behavior defined by "timeout_mode" will be executed.
 # Set to 0 to disable this feature
 # Default: 0
 
@@ -50,44 +57,51 @@ timeout: 1800
 
 timeout_mode: 'reset'
 
+# Screensaver URL
 # "screensaver_url" defines the URL the browser should go to in screensaver mode
 # default is "about:blank"
 
 #screensaver_url: 'http://lib.williamson-tn.org'
 
-
+# Zoom Factor
 # "zoom factor" determines the ratio for text/image scaling (like hitting ctrl-+ or ctrl-- on most browsers).
 # 1.0 is "unzoomed", 0.5 is half-size, 2.0 is double size, etc.
 # Default: 1.0
 
 #zoom_factor: 1.5
 
+# Allow popups
 # "allow_popups" determines whether or not hyperlinks that try to open new browser windows/tabs will be honored or ignored.
 # Default: False
 
 #allow_popups: True
 
+# Allow Plugins
 # "allow_plugins" determines if plugins like flash or java will be enabled.  They must be installed seperately on the system, of course
 # Default: False
 
 #allow_plugins: True
 
+# Force JS confirm
 # "force_js_confirm" allows JavaScript are-you-sure-you-want-to-exit dialog boxes to be overriden with a default answer, "accept" or "deny". When set to "ask", the default, the user is asked each time.
 # Default: "ask"
 
 # force_js_confirm: "accept"
 
+# Suppress alerts
 # "suppress_alerts" blocks JavaScript popup alerts from appearing when True, or shows them when False.
 # Default: False
 # suppress_alerts: True
 
+# SSL Mode
 # "ssl_mode" decides whether problems with ssl certificates will be ignored, or if an error will be shown
 # Possible values are "ignore" and "strict"
 # Default: "strict"
 
 ssl_mode: "ignore"
 
-# "window_size" sets the default size of the application window
+# Window Size
+# "window_size" sets the default size of the application window.
 # It can be a <width>x<height> value, like "800x600",
 # the word "max", in which case the window will maximize,
 # or "full", in which case the window is full-screen.
@@ -95,6 +109,11 @@ ssl_mode: "ignore"
 
 #window_size: 'full'
 
+####################
+# UI Configuration #
+####################
+
+# Navigation
 # Set "navigation" to false to hide the top navigation bar.  Note that this makes bookmarks basically useless, since they won't appear.
 # Default: True
 
@@ -110,18 +129,19 @@ ssl_mode: "ignore"
 
 #navigation_layout: ["back", "forward", "refresh", "spacer", "bookmarks", "spacer", "quit"]
 
-
+# Icon Theme
 # "icon_theme" probably only works on Linux, but set it to an installed theme to set the icons for back/forward/reload/quit.
 # The default is whatever your qt4 is set to use.
 
 icon_theme:  "oxygen"
 
-
+# Stylesheet
 # "stylesheet" will assign a QT stylesheet to the application.  See examples for some style sheets.
 # The default is empty, which will use the default system theme
 
 #stylesheet: "examples/style.css"
 
+# Quit Button
 # "quit_button_text" changes the text on the quit/reset button at the upper right
 # default is "I'm Finished"
 
@@ -134,6 +154,11 @@ icon_theme:  "oxygen"
 
 #quit_button_mode: 'close'
 
+##################
+# Error Messages #
+##################
+
+# Page unavailable
 # "page_unavailable_html" is the path to a *file* that contains html to be displayed whenever a page cannot be accessed,
 # either because it's not available, or blocked due to security rules (whitelist, e.g.).
 # The file should be on the local system, and only reference local resources (css, scripts, etc).
@@ -143,6 +168,7 @@ icon_theme:  "oxygen"
 
 #page_unavailable_html: "examples/custom404.html"
 
+# Network Down
 # "network_down_html" is the path to a *file* that contains html to be displayed whenever the start_url's host cannot be reached,
 # which is very likely indicative of a network connectivity problem (rather than, say, a security restriction)
 # The file should be on the local system, and only reference local resources (css, scripts, etc).
@@ -151,6 +177,10 @@ icon_theme:  "oxygen"
 # Default: empty
 
 #network_down_html: "examples/custom_network_down.html"
+
+############
+# Printing #
+############
 
 # Printing can be enabled by setting "allow_printing" to "True"
 # When enabled, "print" will appear in the page's context menu.
@@ -186,6 +216,11 @@ icon_theme:  "oxygen"
 # Default: none
 
 #user_css: file://etc/admbrowser.css
+
+
+#############
+# Bookmarks #
+#############
 
 # Bookmarks are set in this structure.  They will appear as buttons on the top navigation bar.
 # Each bookmark entry takes this form (note the indentation):
@@ -225,6 +260,7 @@ bookmarks:
     description:  "The author's github site"
 
 # External Content
+
 # If allow_external_content is set to True, clicking a link to an un-renderable MIME-type (PDF, for example)
 # will try to open the content in a specified external application.  If it's false, it will ignore the request.
 # Default: False

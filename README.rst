@@ -20,6 +20,7 @@ ADMBrowser is a fork of WCGBrowser, with these key differences:
 
 - WCGBrowser was based on QtWebKit, ADMBrowser is based on QtWebEngine
 - WCGBrowser supports Python2 and Python3.  ADMBrowser will only actively support Python3.
+- WCGBrowser runs with Qt4 or Qt5.  ADMBrowser requires Qt5 (5.4 or higher).
 - The command line and configuration syntax may differ slightly.
 
 *ADMBROWSER IS CURRENTLY ALPHA QUALITY*  Many features are broken or unavailable simply because QtWebEngine is young and does things differently than QtWebKit.
@@ -28,7 +29,7 @@ ADMBrowser is a fork of WCGBrowser, with these key differences:
 Features
 ========
 
-- Up-to-date webkit rendering
+- Blink (Chrome/Chromium) rendering
 - Text-based, YAML configuration
 - (Optional) Inactivity timeout
 - Popups/open-in-new-window can be disabled
@@ -53,7 +54,7 @@ It should work on any platform, but it's only been tested on Arch Linux.
 Usage
 =====
 
-The included admbrowser.yaml file shows an actual configuration that I use at our public library system.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
+The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
 
     python browser.py
 
@@ -80,7 +81,7 @@ At a minimum, you need to specify a "start url" using either the config file or 
 -z, --zoom              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
 ====================    =====================================================================================================================================
 
-ADMBrowser also accepts the built-in qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at http://doc.qt.digia.com/qt/qapplication.html#QApplication.
+ADMBrowser also accepts the built-in Qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at http://doc.qt.digia.com/qt/qapplication.html#QApplication.
 
 Configuration File
 ==================
@@ -192,7 +193,7 @@ You give the whitelist a list of *domains* or *hosts*, like this::
 
     whitelist: ["somehost.example.com", "some-local-host", "mydomain.org"]
 
-Whenever the user clicks a link or otherwise tries to navigate to a page, the hostname is extracted from the requested URL and matched against the whitelist.  If there's a match, the page is displayed; if not, the error text.
+Whenever the user clicks a link or otherwise tries to navigate to a page, the hostname is extracted from the requested URL and matched against the whitelist.  If there's a match, the page is displayed; if not, the error text is shown.
 
 Some things are automatic:
 
@@ -288,7 +289,6 @@ If you find bugs, please report them as an "issue" at the project's github page:
 
 The following issues showed up with the port from QtWebKit to QtWebEngine:
 
-- Proxy settings don't work.  There's no documented way to set a proxy server on QtWebEngine, that I've found.
 - "privacy_mode" doesn't work.  The option to enable privacy mode no longer exists in QtWebEngine.
 - Plugins can't be disabled.  Again, not a setting in QtWebEngine.
 - The handling of downloaded files is all broken.  There's not yet a way to do this in QtWebEngine.
