@@ -118,7 +118,7 @@ stylesheet             (empty)            Filename of a qss stylesheet to use fo
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
 timeout_mode           reset              The action performed on inactivity timeout.  Values can be "reset" (to return to the start URL and clear history), "close" (to close the program), or 'screensaver' (to display the screensaver_url while idle)
 whitelist              (empty)            A list of web domains or hosts to allow access to (see below).
-window_size            "max"            Make the window default to this size.  Can be <width>x<height> (e.g. 800x600), 'max' for maximized, or "full" for fullscreen.
+window_size            "max"              Make the window default to this size.  Can be <width>x<height> (e.g. 800x600), 'max' for maximized, or "full" for fullscreen.
 zoom_factor            1.0                The amount of zoom applied to pages.  .5 is half size, 2.0 is double size, etc.
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 
@@ -281,24 +281,23 @@ mode                   "screen"           Sets what resolution the printer will 
 Bugs and Limitations
 ====================
 
-- SSL certificate handling is limited; I'd like the ability to add self-signed certificates, but I don't know how to accomplish this yet.  Right now you get "strict" or "ignore", which is not as flexible as one might wish.
 - There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
-- Mime type handling is a little rough still, and you're bound to get 404 or network errors attempting to download documents when it's disabled.
 
 If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/admbrowser/issues. If your "bug" is really a feature request, see below.
 
 The following issues showed up with the port from QtWebKit to QtWebEngine:
 
 - "privacy_mode" doesn't work.  The option to enable privacy mode no longer exists in QtWebEngine.
-- Plugins can't be disabled.  Again, not a setting in QtWebEngine.
-- The handling of downloaded files is all broken.  There's not yet a way to do this in QtWebEngine.
+- Plugins don't work at all.  There is no Flash support whatsoever, because QtWebEngine doesn't support NPAPI plugins and doesn't include Pepper Flash.
+- The handling of downloaded files is all broken.  There's not yet a way to do this in QtWebEngine (supposed to arrive in Qt5.5)
+- Certificate Errors result in the page just not loading.  No errors are logged or anything.  This is due to QtWebEngine behavior, hopefully it will be fixed in future versions of the library.
 - Probably much more that hasn't been tested yet.
 
 
 Contributing
 ============
 
-Contributions are welcome, so long as they are consistent with the spirit and intent of the browser -- that is, they are features useful in a kiosk situation, and keep the browser simple to configure.  I would also prefer that changes to features or behavior are opt-in (require a switch to enable them), unless it just makes no sense to do it that way.
+Contributions are welcome, so long as they are consistent with the spirit and intent of the browser -- that is, they are features useful in a kiosk, signage, or other lock-down situation, and keep the browser simple to configure.  I would also prefer that changes to features or behavior are opt-in (require a switch to enable them), unless it just makes no sense to do it that way.
 
 Coding Standards
 ----------------
@@ -315,8 +314,7 @@ If you're contributing code, please follow these best practices:
 
 - Please document per PEP257; functions & classes need a docstring.
 - Fork the project on GitHub, make your changes, and submit a pull request.
-  You will probably be asked to change or fix some things,
-  that's just how it goes.
+  You will probably be asked to change or fix some things, that's just how it goes.
     
     
   
