@@ -361,37 +361,47 @@ class MainWindow(QMainWindow):
 
             #  Standard navigation tools
             self.nav_items = {}
-            self.nav_items["back"] = self.browser_window.pageAction(QWebEnginePage.Back)
-            self.nav_items["forward"] = self.browser_window.pageAction(QWebEnginePage.Forward)
-            self.nav_items["refresh"] = self.browser_window.pageAction(QWebEnginePage.Reload)
-            self.nav_items["stop"] = self.browser_window.pageAction(QWebEnginePage.Stop)
+            self.nav_items["back"] = (self.browser_window
+                                      .pageAction(QWebEnginePage.Back))
+            self.nav_items["forward"] = (self.browser_window
+                                         .pageAction(QWebEnginePage.Forward))
+            self.nav_items["refresh"] = (self.browser_window
+                                         .pageAction(QWebEnginePage.Reload))
+            self.nav_items["stop"] = (self.browser_window
+                                      .pageAction(QWebEnginePage.Stop))
             # The "I'm finished" button.
             self.nav_items["quit"] = self.createAction(
                 self.config.get("quit_button_text"),
-                qb_mode_callbacks.get(self.config.get("quit_button_mode"), self.reset_browser),
+                qb_mode_callbacks.get(
+                    self.config.get("quit_button_mode"), self.reset_browser
+                ),
                 QKeySequence("Alt+F"),
                 None,
-                quit_button_tooltip)
+                quit_button_tooltip
+            )
             # Zoom buttons
             self.nav_items["zoom_in"] = self.createAction(
                 "Zoom In",
                 self.zoom_in,
                 QKeySequence("Alt++"),
                 "zoom-in",
-                "Increase the size of the text and images on the page")
+                "Increase the size of the text and images on the page"
+            )
             self.nav_items["zoom_out"] = self.createAction(
                 "Zoom Out",
                 self.zoom_out,
                 QKeySequence("Alt+-"),
                 "zoom-out",
-                "Decrease the size of text and images on the page")
+                "Decrease the size of text and images on the page"
+            )
             if self.config.get("allow_printing"):
                 self.nav_items["print"] = self.createAction(
                     "Print",
                     self.browser_window.print_webpage,
                     QKeySequence("Ctrl+p"),
                     "document-print",
-                    "Print this page")
+                    "Print this page"
+                )
 
             # Add all the actions to the navigation bar.
             for item in self.config.get("navigation_layout"):
@@ -401,32 +411,39 @@ class MainWindow(QMainWindow):
                     # an expanding spacer.
                     spacer = QWidget()
                     spacer.setSizePolicy(
-                        QSizePolicy.Expanding, QSizePolicy.Preferred)
+                        QSizePolicy.Expanding,
+                        QSizePolicy.Preferred
+                    )
                     self.navigation_bar.addWidget(spacer)
                 elif item == "bookmarks":
                     # Insert bookmarks buttons here.
                     self.bookmark_buttons = []
                     for bookmark in self.config.get("bookmarks", {}).items():
                         debug("Bookmark:\n" + bookmark.__str__())
-                        # bookmark name will use the "name" attribute, if present
-                        # or else just the key:
+                        # bookmark name will use the "name" attribute,
+                        # if present, or else just the key:
                         bookmark_name = bookmark[1].get("name") or bookmark[0]
                         # Create a button for the bookmark as a QAction,
                         # which we'll add to the toolbar
                         button = self.createAction(
                             bookmark_name,
-                            lambda url=bookmark[1].get("url"): self.browser_window.load(QUrl(url)),
+                            (
+                                lambda url=bookmark[1].get("url"):
+                                self.browser_window.load(QUrl(url))
+                            ),
                             QKeySequence.mnemonic(bookmark_name),
                             None,
                             bookmark[1].get("description")
                         )
                         self.navigation_bar.addAction(button)
-                        self.navigation_bar.widgetForAction(button).setObjectName("navigation_button")
+                        (self.navigation_bar.widgetForAction(button)
+                         .setObjectName("navigation_button"))
                 else:
                     action = self.nav_items.get(item, None)
                     if action:
                         self.navigation_bar.addAction(action)
-                        self.navigation_bar.widgetForAction(action).setObjectName("navigation_button")
+                        (self.navigation_bar.widgetForAction(action)
+                         .setObjectName("navigation_button"))
 
             # This removes the ability to toggle off the navigation bar:
             self.nav_toggle = self.navigation_bar.toggleViewAction()
@@ -439,7 +456,11 @@ class MainWindow(QMainWindow):
         # "Ambiguous shortcut overload".
         # No idea why, as it isn't consistent.
         self.really_quit = self.createAction(
-            "", self.close, QKeySequence("Ctrl+Alt+Q"), None, ""
+            "",
+            self.close,
+            QKeySequence("Ctrl+Alt+Q"),
+            None,
+            ""
         )
         self.addAction(self.really_quit)
 
@@ -449,8 +470,10 @@ class MainWindow(QMainWindow):
             QCoreApplication.instance().installEventFilter(self.event_filter)
             self.browser_window.page().installEventFilter(self.event_filter)
             self.event_filter.timeout.connect(
-                to_mode_callbacks.get(self.config.get("timeout_mode"),
-                                      self.reset_browser))
+                to_mode_callbacks.get(
+                    self.config.get("timeout_mode"),
+                    self.reset_browser)
+            )
         else:
             self.event_filter = None
 
@@ -589,18 +612,21 @@ class AdmWebView(QWebEngineView):
         )
         if config.get('user_css'):
             self.settings().setUserStyleSheetUrl(QUrl(config.get('user_css')))
-        #self.settings().setAttribute(
-        #    QWebEngineSettings.PrivateBrowsingEnabled,
-        #    config.get("privacy_mode")
-        #)
-        self.settings().setAttribute(QWebEngineSettings.LocalStorageEnabled, True)
-        #self.settings().setAttribute(
-        #    QWebEngineSettings.PluginsEnabled,
-        #    config.get("allow_plugins")
-        #)
-        #self.page().setForwardUnsupportedContent(
-        #    config.get("allow_external_content")
-        #)
+        # self.settings().setAttribute(
+        #     QWebEngineSettings.PrivateBrowsingEnabled,
+        #     config.get("privacy_mode")
+        # )
+        self.settings().setAttribute(
+            QWebEngineSettings.LocalStorageEnabled,
+            True
+        )
+        # self.settings().setAttribute(
+        #     QWebEngineSettings.PluginsEnabled,
+        #     config.get("allow_plugins")
+        # )
+        # self.page().setForwardUnsupportedContent(
+        #     config.get("allow_external_content")
+        # )
         self.setZoomFactor(config.get("zoom_factor"))
 
         # add printing to context menu if it's allowed
@@ -612,25 +638,25 @@ class AdmWebView(QWebEngineView):
             self.print_action.setToolTip("Print this web page")
 
         # Set up the proxy if there is one set
-        #if config.get("proxy_server"):
-        #    if ":" in config["proxy_server"]:
-        #        proxyhost, proxyport = config["proxy_server"].split(":")
-        #    else:
-        #        proxyhost = config["proxy_server"]
-        #        proxyport = 8080
+        # if config.get("proxy_server"):
+        #     if ":" in config["proxy_server"]:
+        #         proxyhost, proxyport = config["proxy_server"].split(":")
+        #     else:
+        #         proxyhost = config["proxy_server"]
+        #         proxyport = 8080
             # Not sure how to set proxy server for QWebEngineView??
-            #self.nam.setProxy(QNetworkProxy(
-            #    QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
-            #))
+            # self.nam.setProxy(QNetworkProxy(
+            #     QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
+            # ))
             
         # connections for admwebview
         self.page().authenticationRequired.connect(
             self.auth_dialog
         )
-        #self.page().unsupportedContent.connect(self.handle_unsupported_content)
-        #self.page().sslErrors.connect(
-        #    self.sslErrorHandler
-        #)
+        # self.page().unsupportedContent.connect(self.handle_unsupported_content)
+        # self.page().sslErrors.connect(
+        #     self.sslErrorHandler
+        # )
         self.urlChanged.connect(self.onLinkClick)
         self.loadFinished.connect(self.onLoadFinished)
 
@@ -892,7 +918,8 @@ class AdmWebView(QWebEngineView):
 
 
 class AdmWebPage(QWebEnginePage):
-    """Subclassed QWebEnginePage representing the actual web page object in the browser.
+    """Subclassed QWebEnginePage,
+    representing the actual web page object in the browser.
 
     This was subclassed so that some functions can be overridden.
     """
@@ -931,7 +958,8 @@ class AdmWebPage(QWebEnginePage):
     def userAgentForUrl(self, url):
         """Handle reqests for the browser's user agent
 
-        Overridden from QWebEnginePage so we can force a user agent from the config.
+        Overridden from QWebEnginePage so we can force
+        a user agent from the config.
         """
         return self.user_agent or QWebEnginePage.userAgentForUrl(self, url)
 
@@ -1024,13 +1052,13 @@ if __name__ == "__main__":
         " that require authentication"
     )
     parser.add_argument(  # Allow launching of external programs
-        "-e", "--allow_external", action="store_true", default=argparse.SUPPRESS,
-        dest='allow_external_content',
+        "-e", "--allow_external", action="store_true",
+        default=argparse.SUPPRESS, dest='allow_external_content',
         help="Allow the browser to open content in external programs."
     )
     parser.add_argument(  # Allow browser plugins
-        "-g", "--allow_plugins", action="store_true", default=argparse.SUPPRESS,
-        dest='allow_plugins',
+        "-g", "--allow_plugins", action="store_true",
+        default=argparse.SUPPRESS, dest='allow_plugins',
         help="Allow the browser to use plugins like"
         " Flash or Java (if installed)"
     )
