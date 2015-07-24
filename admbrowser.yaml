@@ -210,7 +210,7 @@ icon_theme:  "oxygen"
 # user_agent allows the user agent string to be overriden, useful for impersonating other browsers.
 # Default: WebKit default user agent
 
-#user_agent: "Firefox IE WebKit Chrome Mosaic Navigator"
+#user_agent: "ADMBrowser"
 
 # user_css allows a custom CSS file to be applied to each page ADMBrowser visits. Accepts any URL supported by QT
 # Default: none

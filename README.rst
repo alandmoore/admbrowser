@@ -46,7 +46,7 @@ Requirements
 ============
 
 - Python 3
-- PyQT5 (v.5.4 or higher)
+- PyQT5 (v.5.5 or higher)
 - Python YAML library (http://pyyaml.org)
 
 It should work on any platform, but it's only been tested on Arch Linux.  

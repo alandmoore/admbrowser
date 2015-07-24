@@ -35,6 +35,7 @@ from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 from PyQt5.QtWebEngineWidgets import (
     QWebEngineView,
     QWebEnginePage,
+    QWebEngineProfile,
     QWebEngineSettings
 )
 from PyQt5.QtNetwork import (
@@ -300,9 +301,27 @@ class MainWindow(QMainWindow):
                 self.whitelist = set(self.whitelist)  # uniquify and optimize
             debug("Generated whitelist: " + str(self.whitelist))
 
+        # create the web engine profile
+        self.create_webprofile()
+
+        # Now construct the UI
         self.build_ui()
 
     # ## END OF CONSTRUCTOR ## #
+
+    def create_webprofile(self):
+        """Create a webengineprofile to use in all views."""
+        if self.config.get("privacy_mode"):
+            webprofile = QWebEngineProfile()
+        else:
+            webprofile = QWebEngineProfile.defaultProfile()
+        debug("Browser session is private: {}"
+              .format(webprofile.isOffTheRecord()))
+        if self.config.get("user_agent"):
+            webprofile.setHttpUserAgent(self.config["user_agent"])
+            debug("Set user agent to \"{}\""
+                  .format(webprofile.httpUserAgent()))
+        self.webprofile = webprofile
 
     def build_ui(self):
         """Set up the user interface for the main window.
@@ -319,24 +338,33 @@ class MainWindow(QMainWindow):
             or """Click here when you are done.
             It will clear your browsing history"""
             """ and return you to the start page.""")
-        qb_mode_callbacks = {'close': self.close, 'reset': self.reset_browser}
-        to_mode_callbacks = {'close': self.close,
-                             'reset': self.reset_browser,
-                             'screensaver': self.screensaver}
+        qb_mode_callbacks = {
+            'close': self.close,
+            'reset': self.reset_browser
+        }
+        to_mode_callbacks = {
+            'close': self.close,
+            'reset': self.reset_browser,
+            'screensaver': self.screensaver
+        }
         self.screensaver_active = False
 
         # ##Start GUI configuration## #
-        self.browser_window = AdmWebView(self.config)
+        self.browser_window = AdmWebView(
+            self.config,
+            webprofile=self.webprofile
+        )
         self.browser_window.setObjectName("web_content")
+        self.setCentralWidget(self.browser_window)
 
-        if (
-            self.config.get("icon_theme") is not None
-            and QT_VERSION_STR > '4.6'
-        ):
-            QIcon.setThemeName(self.config.get("icon_theme"))
+        # Icon theme setting
+        QIcon.setThemeName(self.config.get("icon_theme"))
+
         self.setCentralWidget(self.browser_window)
         debug("loading {}".format(self.config.get("start_url")))
         self.browser_window.setUrl(QUrl(self.config.get("start_url")))
+
+        # Window size settings
         if self.config.get("window_size", '').lower == 'full':
             self.showFullScreen()
         elif (self.config.get("window_size", '').lower() == 'max'):
@@ -603,8 +631,9 @@ class AdmWebView(QWebEngineView):
         super(AdmWebView, self).__init__(parent)
         self.kwargs = kwargs
         self.config = config
-        self.setPage(AdmWebPage())
-        self.page().user_agent = config.get('user_agent', None)
+        # create a web profile for the pages
+        self.webprofile = kwargs.get("webprofile")
+        self.setPage(AdmWebPage(None, self.webprofile))
         self.page().force_js_confirm = config.get("force_js_confirm")
         self.settings().setAttribute(
             QWebEngineSettings.JavascriptCanOpenWindows,
@@ -637,18 +666,6 @@ class AdmWebView(QWebEngineView):
             self.page().printRequested.connect(self.print_webpage)
             self.print_action.setToolTip("Print this web page")
 
-        # Set up the proxy if there is one set
-        # if config.get("proxy_server"):
-        #     if ":" in config["proxy_server"]:
-        #         proxyhost, proxyport = config["proxy_server"].split(":")
-        #     else:
-        #         proxyhost = config["proxy_server"]
-        #         proxyport = 8080
-            # Not sure how to set proxy server for QWebEngineView??
-            # self.nam.setProxy(QNetworkProxy(
-            #     QNetworkProxy.HttpProxy, proxyhost, int(proxyport)
-            # ))
-            
         # connections for admwebview
         self.page().authenticationRequired.connect(
             self.auth_dialog
@@ -669,9 +686,8 @@ class AdmWebView(QWebEngineView):
         """
         if self.config.get("allow_popups"):
             self.popup = AdmWebView(
-                None,
                 self.config,
-                networkAccessManager=self.nam,
+                parent=None,
                 **self.kwargs
             )
             # This assumes the window manager has an "X" icon
@@ -923,10 +939,13 @@ class AdmWebPage(QWebEnginePage):
 
     This was subclassed so that some functions can be overridden.
     """
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, profile=None):
         """Constructor for the class"""
-        super(AdmWebPage, self).__init__(parent)
-        self.user_agent = None
+        debug(profile.httpUserAgent())
+        if not profile:
+            super(AdmWebPage, self).__init__(parent)
+        else:
+            super(AdmWebPage, self).__init__(profile, parent)
 
     def javaScriptConsoleMessage(self, message, line, sourceid):
         """Handle console.log messages from javascript.
@@ -954,14 +973,6 @@ class AdmWebPage(QWebEnginePage):
     def javaScriptAlert(self, frame, msg):
         if not self.suppress_alerts:
             return QWebEnginePage.javaScriptAlert(self, frame, msg)
-
-    def userAgentForUrl(self, url):
-        """Handle reqests for the browser's user agent
-
-        Overridden from QWebEnginePage so we can force
-        a user agent from the config.
-        """
-        return self.user_agent or QWebEnginePage.userAgentForUrl(self, url)
 
     def certificateError(self, error):
         """Handle SSL errors in the browser.
