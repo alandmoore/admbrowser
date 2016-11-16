@@ -114,7 +114,7 @@ downloads from <strong>{url}</strong>."""
 
 def debug(message):
     """Log or print a message if the global DEBUG is true."""
-    if not DEBUG and not DEBUG_LOG:
+    if not (DEBUG or DEBUG_LOG):
         pass
     else:
         message = message.__str__()
@@ -124,56 +124,87 @@ def debug(message):
             print(debug_message)
         if DEBUG_LOG:
             try:
-                fh = open(DEBUG_LOG, 'a')
-                fh.write(debug_message + "\n")
-                fh.close
+                with open(DEBUG_LOG, 'a') as fh:
+                    fh.write(debug_message + "\n")
             except:
                 print("unable to write to log file {}".format(DEBUG_LOG))
 
 # Define our default configuration settings
 CONFIG_OPTIONS = {
     "allow_external_content": {"default": False, "type": bool},
-    "allow_plugins":          {"default": False, "type": bool},
-    "allow_popups":           {"default": False, "type": bool},
-    "allow_printing":         {"default": False, "type": bool},
-    "bookmarks":              {"default": {}, "type": dict},
-    "content_handlers":       {"default": {}, "type": dict},
-    "default_password":       {"default": None, "type": str},
-    "default_user":           {"default": None, "type": str},
-    "force_js_confirm":       {"default": "ask", "type": str,
-                               "values": ("ask", "accept", "deny")},
-    "icon_theme":             {"default": None, "type": str},
-    "navigation":             {"default": True, "type": bool},
-    "navigation_layout":      {"default":
-                               ['back', 'forward', 'refresh', 'stop',
-                                'zoom_in', 'zoom_out', 'separator',
-                                'bookmarks', 'separator', 'spacer',
-                                'quit'], "type": list},
-    "network_down_html":      {"default": DEFAULT_NETWORK_DOWN,
-                               "type": str, "is_file": True},
-    "page_unavailable_html":  {"default": DEFAULT_404, "type": str,
-                               "is_file": True},
-    "print_settings":         {"default": None, "type": dict},
-    "privacy_mode":           {"default": True, "type": bool},
-    "proxy_server":           {"default": None, "type": str,
-                               "env": "http_proxy"},
-    "quit_button_mode":       {"default": "reset", "type": str,
-                               "values": ["reset", "close"]},
-    "quit_button_text":       {"default": "I'm &Finished", "type": str},
-    "screensaver_url":        {"default": "about:blank", "type": str},
-    "ssl_mode":               {"default": "strict", "type": str,
-                               "values": ["strict", "ignore"]},
-    "start_url":              {"default": "about:blank", "type": str},
-    "stylesheet":             {"default": None, "type": str},
-    "suppress_alerts":        {"default": False, "type": bool},
-    "timeout":                {"default": 0, "type": int},
-    "timeout_mode":           {"default": "reset", "type": str,
-                               "values": ["reset", "close", "screensaver"]},
-    "user_agent":             {"default": None, "type": str},
-    "user_css":               {"default": None, "type": str},
-    "whitelist":              {"default": None},  # don't check type here
-    "window_size":            {"default": "max", "type": str},
-    "zoom_factor":            {"default": 1.0, "type": float}
+    "allow_plugins": {"default": False, "type": bool},
+    "allow_popups": {"default": False, "type": bool},
+    "allow_printing": {"default": False, "type": bool},
+    "bookmarks": {"default": {}, "type": dict},
+    "content_handlers": {"default": {}, "type": dict},
+    "default_password": {"default": None, "type": str},
+    "default_user": {"default": None, "type": str},
+    "force_js_confirm": {
+        "default": "ask",
+        "type": str,
+        "values": ("ask", "accept", "deny")
+    },
+    "icon_theme": {"default": None, "type": str},
+    "navigation": {"default": True, "type": bool},
+    "navigation_layout": {
+        "default": [
+            'back',
+            'forward',
+            'refresh',
+            'stop',
+            'zoom_in',
+            'zoom_out',
+            'separator',
+            'bookmarks',
+            'separator',
+            'spacer',
+            'quit'
+        ],
+        "type": list
+    },
+    "network_down_html": {
+        "default": DEFAULT_NETWORK_DOWN,
+        "type": str,
+        "is_file": True
+    },
+    "page_unavailable_html": {
+        "default": DEFAULT_404,
+        "type": str,
+        "is_file": True
+    },
+    "print_settings": {"default": None, "type": dict},
+    "privacy_mode": {"default": True, "type": bool},
+    "proxy_server": {
+        "default": None,
+        "type": str,
+        "env": "http_proxy"
+    },
+    "quit_button_mode": {
+        "default": "reset",
+        "type": str,
+        "values": ["reset", "close"]
+    },
+    "quit_button_text": {"default": "I'm &Finished", "type": str},
+    "screensaver_url": {"default": "about:blank", "type": str},
+    "ssl_mode": {
+        "default": "strict",
+        "type": str,
+        "values": ["strict", "ignore"]
+    },
+    "start_url": {"default": "about:blank", "type": str},
+    "stylesheet": {"default": None, "type": str},
+    "suppress_alerts": {"default": False, "type": bool},
+    "timeout": {"default": 0, "type": int},
+    "timeout_mode": {
+        "default": "reset",
+        "type": str,
+        "values": ["reset", "close", "screensaver"]
+    },
+    "user_agent": {"default": None, "type": str},
+    "user_css": {"default": None, "type": str},
+    "whitelist": {"default": None},  # don't check type here
+    "window_size": {"default": "max", "type": str},
+    "zoom_factor": {"default": 1.0, "type": float}
 }
 
 
@@ -210,8 +241,8 @@ class MainWindow(QMainWindow):
                             self.config[key] = fh.read()
                     except IOError:
                         debug("Could not open file {} for reading.".format(
-                            filename)
-                        )
+                            filename
+                        ))
                         self.config[key] = default_val
             else:
                 set_values = [
@@ -272,9 +303,10 @@ class MainWindow(QMainWindow):
                     self.setStyleSheet(ss.read())
             except:
                 debug(
-                    """Problem loading stylesheet file "{}", """
-                    """using default style."""
-                    .format(self.config.get("stylesheet"))
+                    (
+                        'Problem loading stylesheet file "{}", '
+                        'using default style.'
+                    ).format(self.config.get("stylesheet"))
                 )
         self.setObjectName("global")
 
@@ -319,7 +351,7 @@ class MainWindow(QMainWindow):
               .format(webprofile.isOffTheRecord()))
         if self.config.get("user_agent"):
             webprofile.setHttpUserAgent(self.config["user_agent"])
-            debug("Set user agent to \"{}\""
+            debug('Set user agent to "{}"'
                   .format(webprofile.httpUserAgent()))
         self.webprofile = webprofile
 
@@ -333,11 +365,12 @@ class MainWindow(QMainWindow):
         debug("build_ui")
         inactivity_timeout = self.config.get("timeout")
         quit_button_tooltip = (
-            self.config.get("quit_button_mode") == 'close'
-            and "Click here to quit the browser."
-            or """Click here when you are done.
-            It will clear your browsing history"""
-            """ and return you to the start page.""")
+            "Click here to quit"
+            if self.config.get('quit_button_mode') == 'close'
+            else "Click here when you are done"
+            "\nIt will clear your browsing history"
+            " and return you to the start page."
+        )
         qb_mode_callbacks = {
             'close': self.close,
             'reset': self.reset_browser
@@ -365,18 +398,19 @@ class MainWindow(QMainWindow):
         self.browser_window.setUrl(QUrl(self.config.get("start_url")))
 
         # Window size settings
-        if self.config.get("window_size", '').lower == 'full':
+        window_size = self.config.get("window_size", '').lower()
+        if window_size == 'full':
             self.showFullScreen()
-        elif (self.config.get("window_size", '').lower() == 'max'):
+        elif window_size == 'max':
             self.showMaximized()
-        elif self.config.get("window_size"):
-            size = re.match(r"(\d+)x(\d+)", self.config.get("window_size"))
+        elif window_size:
+            size = re.match(r"(\d+)x(\d+)", window_size)
             if size:
                 width, height = size.groups()
                 self.setFixedSize(int(width), int(height))
             else:
                 debug('Ignoring invalid window size "{}"'.format(
-                    self.config.get("window_size")
+                    window_size
                 ))
 
         # Set up the top navigation bar if it's configured to exist
@@ -388,40 +422,36 @@ class MainWindow(QMainWindow):
             self.navigation_bar.setFloatable(False)
 
             #  Standard navigation tools
-            self.nav_items = {}
-            self.nav_items["back"] = (self.browser_window
-                                      .pageAction(QWebEnginePage.Back))
-            self.nav_items["forward"] = (self.browser_window
-                                         .pageAction(QWebEnginePage.Forward))
-            self.nav_items["refresh"] = (self.browser_window
-                                         .pageAction(QWebEnginePage.Reload))
-            self.nav_items["stop"] = (self.browser_window
-                                      .pageAction(QWebEnginePage.Stop))
-            # The "I'm finished" button.
-            self.nav_items["quit"] = self.createAction(
-                self.config.get("quit_button_text"),
-                qb_mode_callbacks.get(
-                    self.config.get("quit_button_mode"), self.reset_browser
+            self.nav_items = {
+                "back": self.browser_window.pageAction(AdmWebPage.Back),
+                "forward": self.browser_window.pageAction(AdmWebPage.Forward),
+                "refresh": self.browser_window.pageAction(AdmWebPage.Reload),
+                "stop": self.browser_window.pageAction(AdmWebPage.Stop),
+                "quit": self.createAction(
+                    self.config.get("quit_button_text"),
+                    qb_mode_callbacks.get(
+                        self.config.get("quit_button_mode"),
+                        self.reset_browser
+                    ),
+                    QKeySequence("Alt+F"),
+                    None,
+                    quit_button_tooltip
                 ),
-                QKeySequence("Alt+F"),
-                None,
-                quit_button_tooltip
-            )
-            # Zoom buttons
-            self.nav_items["zoom_in"] = self.createAction(
-                "Zoom In",
-                self.zoom_in,
-                QKeySequence("Alt++"),
-                "zoom-in",
-                "Increase the size of the text and images on the page"
-            )
-            self.nav_items["zoom_out"] = self.createAction(
-                "Zoom Out",
-                self.zoom_out,
-                QKeySequence("Alt+-"),
-                "zoom-out",
-                "Decrease the size of text and images on the page"
-            )
+                "zoom_in": self.createAction(
+                    "Zoom In",
+                    self.zoom_in,
+                    QKeySequence("Alt++"),
+                    "zoom-in",
+                    "Increase the size of the text and images on the page"
+                ),
+                "zoom_out": self.createAction(
+                    "Zoom Out",
+                    self.zoom_out,
+                    QKeySequence("Alt+-"),
+                    "zoom-out",
+                    "Decrease the size of text and images on the page"
+                )
+            }
             if self.config.get("allow_printing"):
                 self.nav_items["print"] = self.createAction(
                     "Print",
