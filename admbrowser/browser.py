@@ -50,90 +50,7 @@ from PyQt5.QtNetwork import (
     QNetworkRequest
 )
 
-
-# MESSAGE STRINGS
-# You can override this string with the "page_unavailable_html" setting.
-# Just set it to a filename of the HTML you want to display.
-# It will be formatted agains the configuration file, so you can
-# include any config settings using {config_key_name}
-
-DEFAULT_404 = """<h2>Sorry, can't go there</h2>
-<p>This page is not available on this computer.</p>
-<p>You can return to the <a href='{start_url}'>start page</a>,
-or wait and you'll be returned to the
-<a href='javascript: history.back();'>previous page</a>.</p>
-<script>setTimeout('history.back()', 5000);</script>
-"""
-
-# This text will be shown when the start_url can't be loaded
-# Usually indicates lack of network connectivity.
-# It can be overridden by giving a filename in "network_down_html"
-# and will be formatted against the config.
-
-DEFAULT_NETWORK_DOWN = """<h2>Network Error</h2>
-<p>The start page, {start_url}, cannot be reached.
-This indicates a network connectivity problem.</p>
-<p>Staff, please check the following:</p>
-<ul>
-<li>Ensure the network connections at the computer and at the switch,
-hub, or wall panel are secure</li>
-<li>Restart the computer</li>
-<li>Ensure other systems at your location can access the same URL</li>
-</ul>
-<p>If you continue to get this error, contact technical support</p> """
-
-# This is shown when an https site has a bad certificate and ssl_mode is set
-# to "strict".
-
-CERTIFICATE_ERROR = """<h1>Certificate Problem</h1>
-<p>The URL <strong>{url}</strong> has a problem with its SSL certificate.
-For your security and protection, you will not be able to access it from
- this browser.</p>
-<p>If this URL is supposed to be reachable,
- please contact technical support for help.</p>
-<p>You can return to the <a href='{start_url}'>start page</a>, or wait and
-you'll be returned to the
- <a href='javascript: history.back();'>previous page</a>.</p>
-<script>setTimeout('history.back()', 5000);</script>
-"""
-
-# Shown when content is requested that is not HTML, text, or
-# something specified in the content handlers.
-
-UNKNOWN_CONTENT_TYPE = """<h1>Failed: unrenderable content</h1>
-<p>The browser does not know how to handle the content type
-<strong>{mime_type}</strong> of the file <strong>{file_name}</strong>
- supplied by <strong>{url}</strong>.</p>"""
-
-# This is displayed while a file is being downloaded.
-
-DOWNLOADING_MESSAGE = """<H1>Downloading</h1>
-<p>Please wait while the file <strong>{filename}</strong> ({mime_type})
-downloads from <strong>{url}</strong>."""
-
-DEBUG = False
-DEBUG_LOG = None
-
-
-def debug(message):
-    """Log or print a message if the global DEBUG is true."""
-    if not (DEBUG or DEBUG_LOG):
-        pass
-    else:
-        message = message.__str__()
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        debug_message = "{}:: {}".format(timestamp, message)
-        if DEBUG:
-            print(debug_message)
-        if DEBUG_LOG:
-            try:
-                with open(DEBUG_LOG, 'a') as file_handle:
-                    file_handle.write(debug_message + "\n")
-            except Exception as e:
-                print(
-                    "unable to write to log file {}:  {}"
-                    .format(DEBUG_LOG, e)
-                )
+from . import messages as msg
 
 
 # Define our default configuration settings
@@ -170,12 +87,12 @@ CONFIG_OPTIONS = {
         "type": list
     },
     "network_down_html": {
-        "default": DEFAULT_NETWORK_DOWN,
+        "default": msg.DEFAULT_NETWORK_DOWN,
         "type": str,
         "is_file": True
     },
     "page_unavailable_html": {
-        "default": DEFAULT_404,
+        "default": msg.DEFAULT_404,
         "type": str,
         "is_file": True
     },
@@ -222,87 +139,15 @@ class MainWindow(QMainWindow):
     it defines the GUI window for the browser
     """
 
-    def parse_config(self, file_config, options):
-        """Compile the running config
-
-        Order of precedence:
-          1. Switches
-          2. Config file
-          3. Defaults
-        """
-        self.config = {}
-        options = vars(options)
-        for key, metadata in CONFIG_OPTIONS.items():
-            options_val = options.get(key)
-            file_val = file_config.get(key)
-            env_val = os.environ.get(metadata.get("env", ''))
-
-            default_val = metadata.get("default")
-            vals = metadata.get("values")
-            debug("key: {}, default: {}, file: {}, options: {}".format(
-                key, default_val, file_val, options_val
-            ))
-            if vals:
-                options_val = options_val if options_val in vals else None
-                file_val = file_val if file_val in vals else None
-                env_val = env_val if env_val in vals else None
-            if metadata.get("is_file"):
-                filename = options_val or env_val
-                if not filename:
-                    self.config[key] = default_val
-                else:
-                    try:
-                        with open(filename, 'r') as fh:
-                            self.config[key] = fh.read()
-                    except IOError:
-                        debug("Could not open file {} for reading.".format(
-                            filename
-                        ))
-                        self.config[key] = default_val
-            else:
-                set_values = [
-                    val for val in (options_val, env_val, file_val)
-                    if val is not None
-                ]
-                if len(set_values) > 0:
-                    self.config[key] = set_values[0]
-                else:
-                    self.config[key] = default_val
-            if metadata.get("type") and self.config[key]:
-                debug("{} cast to {}".format(key, metadata.get("type")))
-                self.config[key] = metadata.get("type")(self.config[key])
-        debug(repr(self.config))
-
-    def createAction(self, text, slot=None, shortcut=None, icon=None, tip=None,
-                     checkable=False, signal="triggered"):
-        """Return a QAction given a number of common QAction attributes
-
-        Just a shortcut function Originally borrowed from
-        'Rapid GUI Development with PyQT' by Mark Summerset
-        """
-        action = QAction(text, self)
-        if icon is not None:
-            action.setIcon(QIcon.fromTheme(
-                icon, QIcon(":/{}.png".format(icon))
-            ))
-        if shortcut is not None and not shortcut.isEmpty():
-            action.setShortcut(shortcut)
-            tip += " ({})".format(shortcut.toString())
-        if tip is not None:
-            action.setToolTip(tip)
-            action.setStatusTip(tip)
-        if slot is not None:
-            action.__getattr__(signal).connect(slot)
-        if checkable:
-            action.setCheckable()
-        return action
-
-    def __init__(self, options, parent=None):
+    def __init__(self, options, parent=None, debug=None):
         """Construct a MainWindow Object."""
-        super(MainWindow, self).__init__(parent)
+        super().__init__(parent)
+
+        self.debug = debug or (lambda x: None)
+
         # Load config file
         self.setWindowTitle("Browser")
-        debug("loading configuration from '{}'".format(options.config_file))
+        self.debug("loading configuration from '{}'".format(options.config_file))
         configfile = {}
         if options.config_file:
             configfile = yaml.safe_load(open(options.config_file, 'r'))
@@ -317,7 +162,7 @@ class MainWindow(QMainWindow):
                 with open(self.config.get("stylesheet")) as ss:
                     self.setStyleSheet(ss.read())
             except Exception as e:
-                debug(
+                self.debug(
                     (
                         'Problem loading stylesheet file "{}": {} '
                         '\nusing default style.'
@@ -346,7 +191,7 @@ class MainWindow(QMainWindow):
                     for k, b in bookmarks.items()
                 ]
                 self.whitelist = set(self.whitelist)  # uniquify and optimize
-            debug("Generated whitelist: " + str(self.whitelist))
+            self.debug("Generated whitelist: " + str(self.whitelist))
 
         # create the web engine profile
         self.create_webprofile()
@@ -356,18 +201,93 @@ class MainWindow(QMainWindow):
 
     # ## END OF CONSTRUCTOR ## #
 
+    def parse_config(self, file_config, options):
+        """Compile the running config
+
+        Order of precedence:
+          1. Switches
+          2. Config file
+          3. Defaults
+        """
+        self.config = {}
+        options = vars(options)
+        for key, metadata in CONFIG_OPTIONS.items():
+            options_val = options.get(key)
+            file_val = file_config.get(key)
+            env_val = os.environ.get(metadata.get("env", ''))
+
+            default_val = metadata.get("default")
+            vals = metadata.get("values")
+            self.debug("key: {}, default: {}, file: {}, options: {}".format(
+                key, default_val, file_val, options_val
+            ))
+            if vals:
+                options_val = options_val if options_val in vals else None
+                file_val = file_val if file_val in vals else None
+                env_val = env_val if env_val in vals else None
+            if metadata.get("is_file"):
+                filename = options_val or env_val
+                if not filename:
+                    self.config[key] = default_val
+                else:
+                    try:
+                        with open(filename, 'r') as fh:
+                            self.config[key] = fh.read()
+                    except IOError:
+                        self.debug("Could not open file {} for reading.".format(
+                            filename
+                        ))
+                        self.config[key] = default_val
+            else:
+                set_values = [
+                    val for val in (options_val, env_val, file_val)
+                    if val is not None
+                ]
+                if len(set_values) > 0:
+                    self.config[key] = set_values[0]
+                else:
+                    self.config[key] = default_val
+            if metadata.get("type") and self.config[key]:
+                self.debug("{} cast to {}".format(key, metadata.get("type")))
+                self.config[key] = metadata.get("type")(self.config[key])
+        self.debug(repr(self.config))
+
+    def createAction(self, text, slot=None, shortcut=None, icon=None, tip=None,
+                     checkable=False, signal="triggered"):
+        """Return a QAction given a number of common QAction attributes
+
+        Just a shortcut function Originally borrowed from
+        'Rapid GUI Development with PyQT' by Mark Summerset
+        """
+        action = QAction(text, self)
+        if icon is not None:
+            action.setIcon(QIcon.fromTheme(
+                icon, QIcon(":/{}.png".format(icon))
+            ))
+        if shortcut is not None and not shortcut.isEmpty():
+            action.setShortcut(shortcut)
+            tip += " ({})".format(shortcut.toString())
+        if tip is not None:
+            action.setToolTip(tip)
+            action.setStatusTip(tip)
+        if slot is not None:
+            action.__getattr__(signal).connect(slot)
+        if checkable:
+            action.setCheckable()
+        return action
+
     def create_webprofile(self):
         """Create a webengineprofile to use in all views."""
         if self.config.get("privacy_mode"):
             webprofile = QWebEngineProfile()
         else:
             webprofile = QWebEngineProfile.defaultProfile()
-        debug("Browser session is private: {}"
-              .format(webprofile.isOffTheRecord()))
+        self.debug("Browser session is private: {}"
+                   .format(webprofile.isOffTheRecord()))
         if self.config.get("user_agent"):
             webprofile.setHttpUserAgent(self.config["user_agent"])
-            debug('Set user agent to "{}"'
-                  .format(webprofile.httpUserAgent()))
+            self.debug('Set user agent to "{}"'
+                       .format(webprofile.httpUserAgent()))
         self.webprofile = webprofile
 
     def build_ui(self):
@@ -377,14 +297,12 @@ class MainWindow(QMainWindow):
         whenever the browser is "reset" by the user.
         """
 
-        debug("build_ui")
+        self.debug("build_ui")
         inactivity_timeout = self.config.get("timeout")
         quit_button_tooltip = (
-            "Click here to quit"
+            msg.QUIT_TOOLTIP
             if self.config.get('quit_button_mode') == 'close'
-            else "Click here when you are done"
-            "\nIt will clear your browsing history"
-            " and return you to the start page."
+            else msg.RESET_TOOLTIP
         )
         qb_mode_callbacks = {
             'close': self.close,
@@ -400,7 +318,8 @@ class MainWindow(QMainWindow):
         # ##Start GUI configuration## #
         self.browser_window = AdmWebView(
             self.config,
-            webprofile=self.webprofile
+            webprofile=self.webprofile,
+            debug=self.debug
         )
         self.browser_window.setObjectName("web_content")
         self.setCentralWidget(self.browser_window)
@@ -409,7 +328,7 @@ class MainWindow(QMainWindow):
         QIcon.setThemeName(self.config.get("icon_theme"))
 
         self.setCentralWidget(self.browser_window)
-        debug("loading {}".format(self.config.get("start_url")))
+        self.debug("loading {}".format(self.config.get("start_url")))
         self.browser_window.setUrl(QUrl(self.config.get("start_url")))
 
         # Window size settings
@@ -424,7 +343,7 @@ class MainWindow(QMainWindow):
                 width, height = size.groups()
                 self.setFixedSize(int(width), int(height))
             else:
-                debug('Ignoring invalid window size "{}"'.format(
+                self.debug('Ignoring invalid window size "{}"'.format(
                     window_size
                 ))
 
@@ -492,7 +411,7 @@ class MainWindow(QMainWindow):
                     # Insert bookmarks buttons here.
                     self.bookmark_buttons = []
                     for bookmark in self.config.get("bookmarks", {}).items():
-                        debug("Bookmark:\n" + bookmark.__str__())
+                        self.debug("Bookmark:\n" + bookmark.__str__())
                         # bookmark name will use the "name" attribute,
                         # if present, or else just the key:
                         bookmark_name = bookmark[1].get("name") or bookmark[0]
@@ -559,7 +478,7 @@ class MainWindow(QMainWindow):
         is displayed while the browser is idle.  Activity causes the browser to
         return to the home screen.
         """
-        debug("screensaver started")
+        self.debug("screensaver started")
         self.screensaver_active = True
         if self.popup:
             self.popup.close()
@@ -582,7 +501,7 @@ class MainWindow(QMainWindow):
         self.browser_window.history().clear()
         # self.navigation_bar.clear() doesn't do its job,
         # so remove the toolbar first, then rebuild the UI.
-        debug("RESET BROWSER")
+        self.debug("RESET BROWSER")
         if self.event_filter:
             self.event_filter.blockSignals(True)
         if self.screensaver_active is True:
@@ -671,9 +590,10 @@ class AdmWebView(QWebEngineView):
     It represents a browser window, either the main one or a popup.
     It's a simple wrapper around QWebView that configures some basic settings.
     """
-    def __init__(self, config, parent=None, **kwargs):
+    def __init__(self, config, parent=None, debug=None, **kwargs):
         """Constructor for the class"""
         super(AdmWebView, self).__init__(parent)
+        self.debug = debug or (lambda x: None)
         self.kwargs = kwargs
         self.config = config
         # create a web profile for the pages
@@ -745,7 +665,7 @@ class AdmWebView(QWebEngineView):
             self.popup.show()
             return self.popup
         else:
-            debug("Popup not loaded on {}".format(self.url().toString()))
+            self.debug("Popup not loaded on {}".format(self.url().toString()))
 
     def contextMenuEvent(self, event):
         """Handle requests for a context menu in the browser.
@@ -772,7 +692,7 @@ class AdmWebView(QWebEngineView):
         It might be nice to actually have a dialog here,
         but for now we just use the default credentials from the config file.
         """
-        debug("Auth required on {}".format(requestUrl.toString()))
+        self.debug("Auth required on {}".format(requestUrl.toString()))
         default_user = self.config.get("default_user")
         default_password = self.config.get("default_password")
         if (default_user):
@@ -800,18 +720,18 @@ class AdmWebView(QWebEngineView):
             ''
         )
         content_url = self.reply.url()
-        debug(
+        self.debug(
             "Loading url {} of type {}".format(
                 content_url.toString(), self.content_type
             ))
         if not self.config.get("content_handlers").get(str(self.content_type)):
-            self.setHtml(UNKNOWN_CONTENT_TYPE.format(
+            self.setHtml(msg.UNKNOWN_CONTENT_TYPE.format(
                 mime_type=self.content_type,
                 file_name=self.content_filename,
                 url=content_url.toString()))
         else:
             if str(self.url().toString()) in ('', 'about:blank'):
-                self.setHtml(DOWNLOADING_MESSAGE.format(
+                self.setHtml(msg.DOWNLOADING_MESSAGE.format(
                     filename=self.content_filename,
                     mime_type=self.content_type,
                     url=content_url.toString()))
@@ -853,7 +773,7 @@ class AdmWebView(QWebEngineView):
         Called whenever the browser navigates to a URL;
         handles the whitelisting logic and does some debug logging.
         """
-        debug("Request URL: {}".format(url.toString()))
+        self.debug("Request URL: {}".format(url.toString()))
         if not url.isEmpty():
             # If whitelisting is enabled, and this isn't the start_url host,
             # check the url to see if the host's domain matches.
@@ -870,19 +790,19 @@ class AdmWebView(QWebEngineView):
                      for w
                      in self.config.get("whitelist")]
                 ) + ")$"))
-                debug("Whitelist pattern: {}".format(pattern.pattern))
+                self.debug("Whitelist pattern: {}".format(pattern.pattern))
                 if re.match(pattern, url.host()):
                     site_ok = True
                 if not site_ok:
-                    debug("Site violates whitelist: {}, {}".format(
+                    self.debug("Site violates whitelist: {}, {}".format(
                         url.host(), url.toString())
                     )
                     self.setHtml(self.config.get("page_unavailable_html")
                                  .format(**self.config))
             if not url.isValid():
-                debug("Invalid URL {}".format(url.toString()))
+                self.debug("Invalid URL {}".format(url.toString()))
             else:
-                debug("Load URL {}".format(url.toString()))
+                self.debug("Load URL {}".format(url.toString()))
 
     def onLoadFinished(self, ok):
         """Handle loadFinished events.
@@ -906,12 +826,12 @@ class AdmWebView(QWebEngineView):
             ):
                 self.setHtml(self.config.get("network_down_html")
                              .format(**self.config), QUrl())
-                debug(
+                self.debug(
                     "Start Url doesn't seem to be available;"
                     " displaying error"
                 )
             else:
-                debug(
+                self.debug(
                     "load failed on URL: {}" .format(
                         self.page().requestedUrl().toString())
                 )
@@ -940,7 +860,7 @@ class AdmWebView(QWebEngineView):
                         self.print_settings.get("size_unit").capitalize()
                     )
                 except NameError:
-                    debug(
+                    self.debug(
                         "Specified print size unit '{}' not found,"
                         "using default.".format(
                             self.print_settings.get("size_unit")
@@ -992,9 +912,10 @@ class AdmWebPage(QWebEnginePage):
 
     This was subclassed so that some functions can be overridden.
     """
-    def __init__(self, parent=None, profile=None):
+    def __init__(self, parent=None, profile=None, debug=None):
         """Constructor for the class"""
-        debug(profile.httpUserAgent())
+        self.debug = debug or (lambda x: None)
+        self.debug(profile.httpUserAgent())
         if not profile:
             super(AdmWebPage, self).__init__(parent)
         else:
@@ -1006,7 +927,7 @@ class AdmWebPage(QWebEnginePage):
         Overridden from QWebEnginePage so that we can
         send javascript errors to debug.
         """
-        debug('Javascript Error in "{}" line {}: {}'.format(
+        self.debug('Javascript Error in "{}" line {}: {}'.format(
             sourceid, line, message)
         )
 
@@ -1035,14 +956,14 @@ class AdmWebPage(QWebEnginePage):
         Checks the ssl_mode and responds accordingly.
         Doesn't seem to get called in Qt 5.4
         """
-        debug("certificate error")
+        self.debug("certificate error")
         if self.config.get("ssl_mode") == 'ignore':
-            debug("Certificate error ignored")
-            debug(error.errorDescription())
+            self.debug("Certificate error ignored")
+            self.debug(error.errorDescription())
             return True
         else:
             self.setHtml(
-                CERTIFICATE_ERROR.format(
+                msg.CERTIFICATE_ERROR.format(
                     url=error.url().toString(),
                     start_url=self.config.get("start_url")
                 ))
@@ -1052,105 +973,134 @@ class AdmWebPage(QWebEnginePage):
 
 # ######## Main application code begins here ################## #
 
+class ADMBrowserApp(QApplication):
+
+    def __init__(self, args):
+        super().__init__(args)
+        # locate the configuration file to use.
+        confpaths = [
+            '~/.admbrowser.yaml',
+            '~/.config/admbrowser.yaml',
+            '/etc/admbrowser.yaml',
+            'etc/admbrowser/admbrowser.yaml'
+        ]
+        for path in confpaths:
+            path = os.path.expanduser(path)
+            if os.path.isfile(path):
+                default_config_file = path
+                break
+        else:
+            default_config_file = None
+
+        self.args = self._configure_argparse(default_config_file)
+
+        self.mainwin = MainWindow(self.args, debug=self.debug)
+        self.mainwin.show()
+
+    def debug(self, message):
+        """Log or print a message if the global DEBUG is true."""
+        if not (self.args.debug or self.args.debug_log):
+            pass
+        else:
+            message = message.__str__()
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            debug_message = "{}:: {}".format(timestamp, message)
+            if self.args.debug:
+                print(debug_message)
+            if self.args.debug_log:
+                try:
+                    with open(self.args.debug_log, 'a') as file_handle:
+                        file_handle.write(debug_message + "\n")
+                except Exception as e:
+                    print(
+                        "unable to write to log file {}:  {}"
+                        .format(self.args.debug_log, e)
+                    )
+
+    def _configure_argparse(self, default_config_file):
+        # Parse the command line arguments
+        parser = argparse.ArgumentParser()
+        parser.add_argument(  # Start URL
+            "-l", "--url", action="store", dest="start_url",
+            help="Start browser at URL"
+        )
+        parser.add_argument(  # No Navigation
+            "-n", "--no-navigation", action="store_false",
+            default=argparse.SUPPRESS, dest="navigation",
+            help="Start browser without Navigation controls"
+        )
+        parser.add_argument(  # Config file
+            "-c", "--config-file", action="store", default=default_config_file,
+            dest="config_file", help="Specifiy an alternate config file"
+        )
+        parser.add_argument(  # Debug
+            "-d", "--debug", action="store_true", default=False, dest="debug",
+            help="Enable debugging output to stdout"
+        )
+        parser.add_argument(  # Debug Log
+            "--debug_log", action="store", default=None, dest="debug_log",
+            help="Enable debug output to the specified filename"
+        )
+        parser.add_argument(  # Timeout
+            "-t", "--timeout", action="store", type=int, default=argparse.SUPPRESS,
+            dest="timeout",
+            help="Define the timeout in seconds after which to reset the browser"
+            "due to user inactivity"
+        )
+        parser.add_argument(  # icon theme
+            "-i", "--icon-theme", action="store", default=None, dest="icon_theme",
+            help="override default icon theme with other Qt/KDE icon theme"
+        )
+        parser.add_argument(  # Default zoom factor
+            "-z", "--zoom", action="store", type=float, default=argparse.SUPPRESS,
+            dest="zoomfactor", help="Set the zoom factor for web pages"
+        )
+        parser.add_argument(  # Allow popups
+            "-p", "--popups", action="store_true", default=argparse.SUPPRESS,
+            dest="allow_popups", help="Allow the browser to open new windows"
+        )
+        parser.add_argument(  # Default HTTP user
+            "-u", "--user", action="store", dest="default_user",
+            help="Set the default username used for URLs"
+            " that require authentication"
+        )
+        parser.add_argument(  # Default HTTP password
+            "-w", "--password", action="store", dest="default_password",
+            help="Set the default password used for URLs"
+            " that require authentication"
+        )
+        parser.add_argument(  # Allow launching of external programs
+            "-e", "--allow_external", action="store_true",
+            default=argparse.SUPPRESS, dest='allow_external_content',
+            help="Allow the browser to open content in external programs."
+        )
+        parser.add_argument(  # Allow browser plugins
+            "-g", "--allow_plugins", action="store_true",
+            default=argparse.SUPPRESS, dest='allow_plugins',
+            help="Allow the browser to use plugins like"
+            " Flash or Java (if installed)"
+        )
+        parser.add_argument(  # Window size
+            "--size", action="store", dest="window_size", default=None,
+            help="Specify the default window size in pixels (widthxheight),"
+            " 'max' to maximize, or 'full' for full-screen."
+        )
+        parser.add_argument(  # HTTP Proxy server
+            "--proxy_server", action="store", dest="proxy_server", default=None,
+            help="Specify a proxy server string, in the form host:port"
+        )
+
+        # rather than parse sys.argv here, we're parsing app.arguments
+        # so that qt-specific args are removed.
+        # we also need to remove argument 0.
+        argv = [str(x) for x in list(self.arguments())][1:]
+        return parser.parse_args(argv)
+
+
 def main():
     # Create the qapplication object,
     # so it can interpret the qt-specific CLI args
-    app = QApplication(sys.argv)
-
-    # locate the configuration file to use.
-    if os.path.isfile(os.path.expanduser("~/.admbrowser.yaml")):
-        default_config_file = os.path.expanduser("~/.admbrowser.yaml")
-    elif os.path.isfile("/etc/admbrowser.yaml"):
-        default_config_file = "/etc/admbrowser.yaml"
-    else:
-        default_config_file = None
-
-    # Parse the command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument(  # Start URL
-        "-l", "--url", action="store", dest="start_url",
-        help="Start browser at URL"
-    )
-    parser.add_argument(  # No Navigation
-        "-n", "--no-navigation", action="store_false",
-        default=argparse.SUPPRESS, dest="navigation",
-        help="Start browser without Navigation controls"
-    )
-    parser.add_argument(  # Config file
-        "-c", "--config-file", action="store", default=default_config_file,
-        dest="config_file", help="Specifiy an alternate config file"
-    )
-    parser.add_argument(  # Debug
-        "-d", "--debug", action="store_true", default=False, dest="DEBUG",
-        help="Enable debugging output to stdout"
-    )
-    parser.add_argument(  # Debug Log
-        "--debug_log", action="store", default=None, dest="debug_log",
-        help="Enable debug output to the specified filename"
-    )
-    parser.add_argument(  # Timeout
-        "-t", "--timeout", action="store", type=int, default=argparse.SUPPRESS,
-        dest="timeout",
-        help="Define the timeout in seconds after which to reset the browser"
-        "due to user inactivity"
-    )
-    parser.add_argument(  # icon theme
-        "-i", "--icon-theme", action="store", default=None, dest="icon_theme",
-        help="override default icon theme with other Qt/KDE icon theme"
-    )
-    parser.add_argument(  # Default zoom factor
-        "-z", "--zoom", action="store", type=float, default=argparse.SUPPRESS,
-        dest="zoomfactor", help="Set the zoom factor for web pages"
-    )
-    parser.add_argument(  # Allow popups
-        "-p", "--popups", action="store_true", default=argparse.SUPPRESS,
-        dest="allow_popups", help="Allow the browser to open new windows"
-    )
-    parser.add_argument(  # Default HTTP user
-        "-u", "--user", action="store", dest="default_user",
-        help="Set the default username used for URLs"
-        " that require authentication"
-    )
-    parser.add_argument(  # Default HTTP password
-        "-w", "--password", action="store", dest="default_password",
-        help="Set the default password used for URLs"
-        " that require authentication"
-    )
-    parser.add_argument(  # Allow launching of external programs
-        "-e", "--allow_external", action="store_true",
-        default=argparse.SUPPRESS, dest='allow_external_content',
-        help="Allow the browser to open content in external programs."
-    )
-    parser.add_argument(  # Allow browser plugins
-        "-g", "--allow_plugins", action="store_true",
-        default=argparse.SUPPRESS, dest='allow_plugins',
-        help="Allow the browser to use plugins like"
-        " Flash or Java (if installed)"
-    )
-    parser.add_argument(  # Window size
-        "--size", action="store", dest="window_size", default=None,
-        help="Specify the default window size in pixels (widthxheight),"
-        " 'max' to maximize, or 'full' for full-screen."
-    )
-    parser.add_argument(  # HTTP Proxy server
-        "--proxy_server", action="store", dest="proxy_server", default=None,
-        help="Specify a proxy server string, in the form host:port"
-    )
-
-    # rather than parse sys.argv here, we're parsing app.arguments
-    # so that qt-specific args are removed.
-    # we also need to remove argument 0.
-    args = parser.parse_args([str(x) for x in list(app.arguments())][1:])
-    global DEBUG
-    global DEBUG_LOG
-    DEBUG = args.DEBUG
-    DEBUG_LOG = args.debug_log
-    if not args.config_file:
-        debug("No config file found or specified; using defaults.")
-
-    # run the actual application
-    mainwin = MainWindow(args)
-    mainwin.show()
+    app = ADMBrowserApp(sys.argv)
     app.exec_()
 
 
