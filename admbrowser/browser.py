@@ -1,18 +1,26 @@
 #!/usr/bin/python
 """
-This is the main script for ADMBrowser, a kiosk-oriented web browser
+Thisq is the main script for ADMBrowser, a kiosk-oriented web browser
 Written by Alan D Moore, http://www.alandmoore.com
 Released under the GNU GPL v3
 """
 
 # QT Binding imports
+# Standard library imports
+import sys
+import os
+import argparse
+import re
+import subprocess
+import datetime
+
+import yaml
 
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtCore import (
     QUrl,
     QTimer,
     QObject,
-    QT_VERSION_STR,
     QEvent,
     Qt,
     QTemporaryFile,
@@ -42,14 +50,6 @@ from PyQt5.QtNetwork import (
     QNetworkRequest
 )
 
-# Standard library imports
-import sys
-import os
-import argparse
-import yaml
-import re
-import subprocess
-import datetime
 
 # MESSAGE STRINGS
 # You can override this string with the "page_unavailable_html" setting.
@@ -111,6 +111,9 @@ DOWNLOADING_MESSAGE = """<H1>Downloading</h1>
 <p>Please wait while the file <strong>{filename}</strong> ({mime_type})
 downloads from <strong>{url}</strong>."""
 
+DEBUG = False
+DEBUG_LOG = None
+
 
 def debug(message):
     """Log or print a message if the global DEBUG is true."""
@@ -118,16 +121,20 @@ def debug(message):
         pass
     else:
         message = message.__str__()
-        ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        debug_message = ts + ":: " + message
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        debug_message = "{}:: {}".format(timestamp, message)
         if DEBUG:
             print(debug_message)
         if DEBUG_LOG:
             try:
-                with open(DEBUG_LOG, 'a') as fh:
-                    fh.write(debug_message + "\n")
-            except:
-                print("unable to write to log file {}".format(DEBUG_LOG))
+                with open(DEBUG_LOG, 'a') as file_handle:
+                    file_handle.write(debug_message + "\n")
+            except Exception as e:
+                print(
+                    "unable to write to log file {}:  {}"
+                    .format(DEBUG_LOG, e)
+                )
+
 
 # Define our default configuration settings
 CONFIG_OPTIONS = {
@@ -216,21 +223,29 @@ class MainWindow(QMainWindow):
     """
 
     def parse_config(self, file_config, options):
+        """Compile the running config
+
+        Order of precedence:
+          1. Switches
+          2. Config file
+          3. Defaults
+        """
         self.config = {}
         options = vars(options)
         for key, metadata in CONFIG_OPTIONS.items():
             options_val = options.get(key)
             file_val = file_config.get(key)
             env_val = os.environ.get(metadata.get("env", ''))
+
             default_val = metadata.get("default")
             vals = metadata.get("values")
             debug("key: {}, default: {}, file: {}, options: {}".format(
                 key, default_val, file_val, options_val
             ))
             if vals:
-                options_val = (options_val in vals and options_val) or None
-                file_val = (file_val in vals and file_val) or None
-                env_val = (env_val in vals and env_val) or None
+                options_val = options_val if options_val in vals else None
+                file_val = file_val if file_val in vals else None
+                env_val = env_val if env_val in vals else None
             if metadata.get("is_file"):
                 filename = options_val or env_val
                 if not filename:
@@ -301,12 +316,12 @@ class MainWindow(QMainWindow):
             try:
                 with open(self.config.get("stylesheet")) as ss:
                     self.setStyleSheet(ss.read())
-            except:
+            except Exception as e:
                 debug(
                     (
-                        'Problem loading stylesheet file "{}", '
-                        'using default style.'
-                    ).format(self.config.get("stylesheet"))
+                        'Problem loading stylesheet file "{}": {} '
+                        '\nusing default style.'
+                    ).format(self.config.get("stylesheet"), e)
                 )
         self.setObjectName("global")
 
@@ -563,7 +578,7 @@ class MainWindow(QMainWindow):
         'reset' mode.
         """
         # Clear out the memory cache
-        #QWebEngineSettings.clearMemoryCaches()
+        # QWebEngineSettings.clearMemoryCaches()
         self.browser_window.history().clear()
         # self.navigation_bar.clear() doesn't do its job,
         # so remove the toolbar first, then rebuild the UI.
@@ -781,8 +796,8 @@ class AdmWebView(QWebEngineView):
             self.reply.rawHeader('Content-Disposition')
         )
         self.content_filename = QUrl.fromPercentEncoding(
-            (self.content_filename and self.content_filename.group(1))
-            or ''
+            (self.content_filename and self.content_filename.group(1)) or
+            ''
         )
         content_url = self.reply.url()
         debug(
@@ -843,10 +858,11 @@ class AdmWebView(QWebEngineView):
             # If whitelisting is enabled, and this isn't the start_url host,
             # check the url to see if the host's domain matches.
             if (
-                self.config.get("whitelist")
-                and not (url.host() ==
-                         QUrl(self.config.get("start_url")).host())
-                and not str(url.toString()) == 'about:blank'
+                self.config.get("whitelist") and
+                    not (
+                        url.host() ==
+                        QUrl(self.config.get("start_url")).host()) and
+                    not str(url.toString()) == 'about:blank'
             ):
                 site_ok = False
                 pattern = re.compile(str("(^|.*\.)(" + "|".join(
@@ -879,18 +895,25 @@ class AdmWebView(QWebEngineView):
         (if it's the start page that failed).
         """
         if not ok:
+            start_url = self.config.get('start_url')
+            start_host = QUrl(start_url).host()
+            start_path = str(QUrl(start_url).path()).rstrip('/')
+            failed_host = self.url().host()
+            failed_path = str(self.url().path()).rstrip('/')
             if (
-                self.url().host() == QUrl(self.config.get("start_url")).host()
-                and str(self.url().path()).rstrip("/") ==
-                    str(QUrl(self.config.get("start_url")).path()).rstrip("/")
+                    failed_host == start_host and
+                    failed_path == start_path
             ):
                 self.setHtml(self.config.get("network_down_html")
                              .format(**self.config), QUrl())
-                debug("Start Url doesn't seem to be available;"
-                      " displaying error")
+                debug(
+                    "Start Url doesn't seem to be available;"
+                    " displaying error"
+                )
             else:
-                debug("load failed on URL: {}" .format(
-                    self.page().requestedUrl().toString())
+                debug(
+                    "load failed on URL: {}" .format(
+                        self.page().requestedUrl().toString())
                 )
                 self.setHtml(
                     self.config.get("page_unavailable_html")
@@ -927,8 +950,8 @@ class AdmWebView(QWebEngineView):
                 unit = QPrinter.Millimeter
 
             margins = (
-                list(self.print_settings.get("margins"))
-                or list(printer.getPageMargins(unit))
+                list(self.print_settings.get("margins")) or
+                list(printer.getPageMargins(unit))
             )
             margins += [unit]
             printer.setPageMargins(*margins)
@@ -1029,7 +1052,7 @@ class AdmWebPage(QWebEnginePage):
 
 # ######## Main application code begins here ################## #
 
-if __name__ == "__main__":
+def main():
     # Create the qapplication object,
     # so it can interpret the qt-specific CLI args
     app = QApplication(sys.argv)
@@ -1049,8 +1072,9 @@ if __name__ == "__main__":
         help="Start browser at URL"
     )
     parser.add_argument(  # No Navigation
-        "-n", "--no-navigation", action="store_false", default=argparse.SUPPRESS,
-        dest="navigation", help="Start browser without Navigation controls"
+        "-n", "--no-navigation", action="store_false",
+        default=argparse.SUPPRESS, dest="navigation",
+        help="Start browser without Navigation controls"
     )
     parser.add_argument(  # Config file
         "-c", "--config-file", action="store", default=default_config_file,
@@ -1117,6 +1141,8 @@ if __name__ == "__main__":
     # so that qt-specific args are removed.
     # we also need to remove argument 0.
     args = parser.parse_args([str(x) for x in list(app.arguments())][1:])
+    global DEBUG
+    global DEBUG_LOG
     DEBUG = args.DEBUG
     DEBUG_LOG = args.debug_log
     if not args.config_file:
@@ -1126,3 +1152,7 @@ if __name__ == "__main__":
     mainwin = MainWindow(args)
     mainwin.show()
     app.exec_()
+
+
+if __name__ == "__main__":
+    main()
