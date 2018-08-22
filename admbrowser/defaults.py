@@ -109,7 +109,7 @@ CONFIG_OPTIONS = {
         "default": "about:blank",
         "type": str,
         "switches": ("-l", "--url"),
-        "help": "Start browser at this URL"
+        "help": "Start browser at this URL",
     },
     "stylesheet": {"default": None, "type": str},
     "suppress_alerts": {"default": False, "type": bool},

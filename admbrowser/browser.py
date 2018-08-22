@@ -425,15 +425,18 @@ class ADMBrowserApp(QApplication):
             default_config_file = None
 
         # figure out configuration
-        self.args = self._configure_argparse(default_config_file)
-        configfile = {}
-        if self.args.config_file:
-            configfile = yaml.safe_load(open(self.args.config_file, 'r'))
-        self.parse_config(configfile)
+        self.args = self._configure_argparse()
+        configfile = getattr(self.args, "config_file", default_config_file)
+        configfile_data = (
+            yaml.safe_load(open(configfile, 'r'))
+            if configfile
+            else {}
+        )
+        self.parse_config(configfile_data)
 
         # Note: can't call "debug" unti self.args exists
         self.debug(
-            "loading configuration from '{}'".format(default_config_file)
+            "loading configuration from '{}'".format(configfile)
         )
 
         # Create main window
@@ -517,14 +520,15 @@ class ADMBrowserApp(QApplication):
                 self.config[key] = metadata.get("type")(self.config[key])
         self.debug(repr(self.config))
 
-    def _configure_argparse(self, default_config_file):
+    def _configure_argparse(self):
         # Parse the command line arguments
         parser = argparse.ArgumentParser()
 
         # add non-config switches
         parser.add_argument(  # Config file
-            "-c", "--config-file", action="store", default=default_config_file,
-            dest="config_file", help="Specifiy an alternate config file"
+            "-c", "--config-file", action="store", default=argparse.SUPPRESS,
+            dest="config_file",
+            help="Specifiy an alternate config file"
         )
         parser.add_argument(  # Debug
             "-d", "--debug", action="store_true", default=False, dest="debug",
@@ -538,12 +542,22 @@ class ADMBrowserApp(QApplication):
         # add config switches
         for key, meta in CONFIG_OPTIONS.items():
             if meta.get("switches"):
+                # not all actions are valid with the same keyword
+                action = meta.get("action", "store")
+                kwargs = {}
+                if action == "store":
+                    kwargs["type"] = meta.get("type")
+                    kwargs["choices"] = meta.get("values")
+
                 parser.add_argument(
                     *(meta["switches"]),
                     action=meta.get("action", "store"),
-                    default=meta.get("default"),
+                    # no need for a default in argparse
+                    # since we have a default option
+                    default=argparse.SUPPRESS,
                     dest=key,
-                    help=meta.get("help")
+                    help=meta.get("help"),
+                    **kwargs
                 )
 
         # rather than parse sys.argv here, we're parsing app.arguments
