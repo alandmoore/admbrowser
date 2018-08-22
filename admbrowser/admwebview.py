@@ -34,7 +34,13 @@ class AdmWebView(QWebEngineView):
     It's a simple wrapper around QWebView that configures some basic settings.
     """
     def __init__(self, config, parent=None, debug=None, **kwargs):
-        """Constructor for the class"""
+        """Constructor for the AdmWebView
+
+        Parameters:
+          - config: The application's runtime configuration
+          - parent: The parent widget/window
+          - debug:  The function/method for posting debug strings
+        """
         super(AdmWebView, self).__init__(parent)
         self.debug = debug or (lambda x: None)
         self.kwargs = kwargs

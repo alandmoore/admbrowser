@@ -18,12 +18,8 @@ import yaml
 from PyQt5.QtGui import QIcon, QKeySequence
 from PyQt5.QtCore import (
     QUrl,
-    QTimer,
-    QObject,
-    QEvent,
     Qt,
     QCoreApplication,
-    pyqtSignal,
 )
 from PyQt5.QtWidgets import (
     QMainWindow,
@@ -40,84 +36,8 @@ from PyQt5.QtWebEngineWidgets import (
 from . import messages as msg
 from .admwebview import AdmWebView
 from .admwebpage import AdmWebPage
-
-# Define our default configuration settings
-CONFIG_OPTIONS = {
-    "allow_external_content": {"default": False, "type": bool},
-    "allow_plugins": {"default": False, "type": bool},
-    "allow_popups": {"default": False, "type": bool},
-    "allow_printing": {"default": False, "type": bool},
-    "bookmarks": {"default": {}, "type": dict},
-    "content_handlers": {"default": {}, "type": dict},
-    "default_password": {"default": None, "type": str},
-    "default_user": {"default": None, "type": str},
-    "force_js_confirm": {
-        "default": "ask",
-        "type": str,
-        "values": ("ask", "accept", "deny")
-    },
-    "icon_theme": {"default": None, "type": str},
-    "navigation": {"default": True, "type": bool},
-    "navigation_layout": {
-        "default": [
-            'back',
-            'forward',
-            'refresh',
-            'stop',
-            'zoom_in',
-            'zoom_out',
-            'separator',
-            'bookmarks',
-            'separator',
-            'spacer',
-            'quit'
-        ],
-        "type": list
-    },
-    "network_down_html": {
-        "default": msg.DEFAULT_NETWORK_DOWN,
-        "type": str,
-        "is_file": True
-    },
-    "page_unavailable_html": {
-        "default": msg.DEFAULT_404,
-        "type": str,
-        "is_file": True
-    },
-    "print_settings": {"default": None, "type": dict},
-    "privacy_mode": {"default": True, "type": bool},
-    "proxy_server": {
-        "default": None,
-        "type": str,
-        "env": "http_proxy"
-    },
-    "quit_button_mode": {
-        "default": "reset",
-        "type": str,
-        "values": ["reset", "close"]
-    },
-    "quit_button_text": {"default": "I'm &Finished", "type": str},
-    "screensaver_url": {"default": "about:blank", "type": str},
-    "ssl_mode": {
-        "default": "strict",
-        "type": str,
-        "values": ["strict", "ignore"]
-    },
-    "start_url": {"default": "about:blank", "type": str},
-    "stylesheet": {"default": None, "type": str},
-    "suppress_alerts": {"default": False, "type": bool},
-    "timeout": {"default": 0, "type": int},
-    "timeout_mode": {
-        "default": "reset",
-        "type": str,
-        "values": ["reset", "close", "screensaver"]
-    },
-    "user_agent": {"default": None, "type": str},
-    "user_css": {"default": None, "type": str},
-    "whitelist": {"default": None},  # don't check type here
-    "window_size": {"default": "max", "type": str},
-    "zoom_factor": {"default": 1.0, "type": float}
-}
+from .inactivity_filter import InactivityFilter
+from .defaults import CONFIG_OPTIONS
 
 
 class MainWindow(QMainWindow):
@@ -127,19 +47,15 @@ class MainWindow(QMainWindow):
     it defines the GUI window for the browser
     """
 
-    def __init__(self, options, parent=None, debug=None):
+    def __init__(self, config, parent=None, debug=None):
         """Construct a MainWindow Object."""
         super().__init__(parent)
 
         self.debug = debug or (lambda x: None)
+        self.config = config
 
-        # Load config file
         self.setWindowTitle("Browser")
-        self.debug("loading configuration from '{}'".format(options.config_file))
-        configfile = {}
-        if options.config_file:
-            configfile = yaml.safe_load(open(options.config_file, 'r'))
-        self.parse_config(configfile, options)
+
         # self.popup will hold a reference to the popup window
         # if it gets opened
         self.popup = None
@@ -189,57 +105,6 @@ class MainWindow(QMainWindow):
 
     # ## END OF CONSTRUCTOR ## #
 
-    def parse_config(self, file_config, options):
-        """Compile the running config
-
-        Order of precedence:
-          1. Switches
-          2. Config file
-          3. Defaults
-        """
-        self.config = {}
-        options = vars(options)
-        for key, metadata in CONFIG_OPTIONS.items():
-            options_val = options.get(key)
-            file_val = file_config.get(key)
-            env_val = os.environ.get(metadata.get("env", ''))
-
-            default_val = metadata.get("default")
-            vals = metadata.get("values")
-            self.debug("key: {}, default: {}, file: {}, options: {}".format(
-                key, default_val, file_val, options_val
-            ))
-            if vals:
-                options_val = options_val if options_val in vals else None
-                file_val = file_val if file_val in vals else None
-                env_val = env_val if env_val in vals else None
-            if metadata.get("is_file"):
-                filename = options_val or env_val
-                if not filename:
-                    self.config[key] = default_val
-                else:
-                    try:
-                        with open(filename, 'r') as fh:
-                            self.config[key] = fh.read()
-                    except IOError:
-                        self.debug("Could not open file {} for reading.".format(
-                            filename
-                        ))
-                        self.config[key] = default_val
-            else:
-                set_values = [
-                    val for val in (options_val, env_val, file_val)
-                    if val is not None
-                ]
-                if len(set_values) > 0:
-                    self.config[key] = set_values[0]
-                else:
-                    self.config[key] = default_val
-            if metadata.get("type") and self.config[key]:
-                self.debug("{} cast to {}".format(key, metadata.get("type")))
-                self.config[key] = metadata.get("type")(self.config[key])
-        self.debug(repr(self.config))
-
     def createAction(self, text, slot=None, shortcut=None, icon=None, tip=None,
                      checkable=False, signal="triggered"):
         """Return a QAction given a number of common QAction attributes
@@ -266,16 +131,23 @@ class MainWindow(QMainWindow):
 
     def create_webprofile(self):
         """Create a webengineprofile to use in all views."""
-        if self.config.get("privacy_mode"):
-            webprofile = QWebEngineProfile()
-        else:
-            webprofile = QWebEngineProfile.defaultProfile()
+
+        # create private/nonprivate webprofile per settings
+        webprofile = (
+            QWebEngineProfile()
+            if self.config.get('privacy_mode')
+            else QWebEngineProfile.defaultProfile()
+        )
         self.debug("Browser session is private: {}"
                    .format(webprofile.isOffTheRecord()))
+
+        # Set user agent string
         if self.config.get("user_agent"):
             webprofile.setHttpUserAgent(self.config["user_agent"])
             self.debug('Set user agent to "{}"'
                        .format(webprofile.httpUserAgent()))
+
+        # use webprofile
         self.webprofile = webprofile
 
     def build_ui(self):
@@ -531,49 +403,6 @@ class MainWindow(QMainWindow):
 # ## END Main Application Window Class def ## #
 
 
-class InactivityFilter(QTimer):
-    """This defines an inactivity filter.
-
-    It's basically a timer that resets when user "activity"
-    (Mouse/Keyboard events) are detected in the main application.
-    """
-    activity = pyqtSignal()
-
-    def __init__(self, timeout=0, parent=None):
-        """Constructor for the class.
-
-        args:
-          timeout -- number of seconds before timer times out (integer)
-        """
-        super(InactivityFilter, self).__init__(parent)
-        # timeout needs to be converted from seconds to milliseconds
-        self.timeout_time = timeout * 1000
-        self.setInterval(self.timeout_time)
-        self.start()
-
-    def eventFilter(self, object, event):
-        """Overridden from QTimer.eventFilter"""
-        if event.type() in (
-            QEvent.MouseMove, QEvent.MouseButtonPress,
-            QEvent.HoverMove, QEvent.KeyPress,
-            QEvent.KeyRelease
-        ):
-            self.activity.emit()
-            self.start(self.timeout_time)
-            # commented this debug code,
-            # because it spits out way to much information.
-            # uncomment if you're having trouble with the timeout detecting
-            # user inactivity correctly to determine what it's detecting
-            # and ignoring:
-
-            # debug ("Activity: %s type %d" % (event, event.type()))
-            # else:
-            # debug("Ignored event: %s type %d" % (event, event.type()))
-        return QObject.eventFilter(self, object, event)
-
-
-
-
 # ######## Main application code begins here ################## #
 
 class ADMBrowserApp(QApplication):
@@ -595,9 +424,20 @@ class ADMBrowserApp(QApplication):
         else:
             default_config_file = None
 
+        # figure out configuration
         self.args = self._configure_argparse(default_config_file)
+        configfile = {}
+        if self.args.config_file:
+            configfile = yaml.safe_load(open(self.args.config_file, 'r'))
+        self.parse_config(configfile)
 
-        self.mainwin = MainWindow(self.args, debug=self.debug)
+        # Note: can't call "debug" unti self.args exists
+        self.debug(
+            "loading configuration from '{}'".format(default_config_file)
+        )
+
+        # Create main window
+        self.mainwin = MainWindow(self.config, debug=self.debug)
         self.mainwin.show()
 
     def debug(self, message):
@@ -620,18 +460,68 @@ class ADMBrowserApp(QApplication):
                         .format(self.args.debug_log, e)
                     )
 
+    def parse_config(self, file_config):
+        """Compile the running config into self.config
+
+        Order of precedence:
+          1. Switches
+          2. Config file
+          3. Defaults
+        """
+        self.config = {}
+        # convert self.args to a dict
+        options = vars(self.args)
+
+        # For each option in the CONFIG_OPTIONS dict,
+        # determine the ultimate value by coalescing
+        # the switches, config file value, environment, and defaults
+
+        for key, metadata in CONFIG_OPTIONS.items():
+            options_val = options.get(key)
+            file_val = file_config.get(key)
+            env_val = os.environ.get(metadata.get("env", ''))
+
+            default_val = metadata.get("default")
+            vals = metadata.get("values")
+            self.debug("key: {}, default: {}, file: {}, options: {}".format(
+                key, default_val, file_val, options_val
+            ))
+            if vals:
+                options_val = options_val if options_val in vals else None
+                file_val = file_val if file_val in vals else None
+                env_val = env_val if env_val in vals else None
+            if metadata.get("is_file"):
+                filename = options_val or env_val
+                if not filename:
+                    self.config[key] = default_val
+                else:
+                    try:
+                        with open(filename, 'r') as fh:
+                            self.config[key] = fh.read()
+                    except IOError:
+                        self.debug("Could not open file {} for reading.".format(
+                            filename
+                        ))
+                        self.config[key] = default_val
+            else:
+                set_values = [
+                    val for val in (options_val, env_val, file_val)
+                    if val is not None
+                ]
+                if len(set_values) > 0:
+                    self.config[key] = set_values[0]
+                else:
+                    self.config[key] = default_val
+            if metadata.get("type") and self.config[key]:
+                self.debug("{} cast to {}".format(key, metadata.get("type")))
+                self.config[key] = metadata.get("type")(self.config[key])
+        self.debug(repr(self.config))
+
     def _configure_argparse(self, default_config_file):
         # Parse the command line arguments
         parser = argparse.ArgumentParser()
-        parser.add_argument(  # Start URL
-            "-l", "--url", action="store", dest="start_url",
-            help="Start browser at URL"
-        )
-        parser.add_argument(  # No Navigation
-            "-n", "--no-navigation", action="store_false",
-            default=argparse.SUPPRESS, dest="navigation",
-            help="Start browser without Navigation controls"
-        )
+
+        # add non-config switches
         parser.add_argument(  # Config file
             "-c", "--config-file", action="store", default=default_config_file,
             dest="config_file", help="Specifiy an alternate config file"
@@ -644,54 +534,17 @@ class ADMBrowserApp(QApplication):
             "--debug_log", action="store", default=None, dest="debug_log",
             help="Enable debug output to the specified filename"
         )
-        parser.add_argument(  # Timeout
-            "-t", "--timeout", action="store", type=int, default=argparse.SUPPRESS,
-            dest="timeout",
-            help="Define the timeout in seconds after which to reset the browser"
-            "due to user inactivity"
-        )
-        parser.add_argument(  # icon theme
-            "-i", "--icon-theme", action="store", default=None, dest="icon_theme",
-            help="override default icon theme with other Qt/KDE icon theme"
-        )
-        parser.add_argument(  # Default zoom factor
-            "-z", "--zoom", action="store", type=float, default=argparse.SUPPRESS,
-            dest="zoomfactor", help="Set the zoom factor for web pages"
-        )
-        parser.add_argument(  # Allow popups
-            "-p", "--popups", action="store_true", default=argparse.SUPPRESS,
-            dest="allow_popups", help="Allow the browser to open new windows"
-        )
-        parser.add_argument(  # Default HTTP user
-            "-u", "--user", action="store", dest="default_user",
-            help="Set the default username used for URLs"
-            " that require authentication"
-        )
-        parser.add_argument(  # Default HTTP password
-            "-w", "--password", action="store", dest="default_password",
-            help="Set the default password used for URLs"
-            " that require authentication"
-        )
-        parser.add_argument(  # Allow launching of external programs
-            "-e", "--allow_external", action="store_true",
-            default=argparse.SUPPRESS, dest='allow_external_content',
-            help="Allow the browser to open content in external programs."
-        )
-        parser.add_argument(  # Allow browser plugins
-            "-g", "--allow_plugins", action="store_true",
-            default=argparse.SUPPRESS, dest='allow_plugins',
-            help="Allow the browser to use plugins like"
-            " Flash or Java (if installed)"
-        )
-        parser.add_argument(  # Window size
-            "--size", action="store", dest="window_size", default=None,
-            help="Specify the default window size in pixels (widthxheight),"
-            " 'max' to maximize, or 'full' for full-screen."
-        )
-        parser.add_argument(  # HTTP Proxy server
-            "--proxy_server", action="store", dest="proxy_server", default=None,
-            help="Specify a proxy server string, in the form host:port"
-        )
+
+        # add config switches
+        for key, meta in CONFIG_OPTIONS.items():
+            if meta.get("switches"):
+                parser.add_argument(
+                    *(meta["switches"]),
+                    action=meta.get("action", "store"),
+                    default=meta.get("default"),
+                    dest=key,
+                    help=meta.get("help")
+                )
 
         # rather than parse sys.argv here, we're parsing app.arguments
         # so that qt-specific args are removed.
