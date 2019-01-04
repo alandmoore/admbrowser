@@ -23,6 +23,7 @@ from PyQt5 import QtWebEngineWidgets as qtwe
 from . import messages as msg
 from .admwebview import AdmWebView
 from .admwebpage import AdmWebPage
+from .admnavbutton import AdmNavButton
 from .inactivity_filter import InactivityFilter
 from .defaults import CONFIG_OPTIONS
 
@@ -196,11 +197,13 @@ class MainWindow(qtw.QMainWindow):
 
         # Set up the top navigation bar if it's configured to exist
         if self.config.get("navigation"):
-            self.navigation_bar = qtw.QToolBar("Navigation")
-            self.navigation_bar.setObjectName("navigation")
+            self.navigation_bar = qtw.QToolBar(
+                "Navigation",
+                objectName="navigation",
+                movable=False,
+                floatable=False
+            )
             self.addToolBar(qtc.Qt.TopToolBarArea, self.navigation_bar)
-            self.navigation_bar.setMovable(False)
-            self.navigation_bar.setFloatable(False)
 
             #  Standard navigation tools
             self.nav_items = {
@@ -262,21 +265,15 @@ class MainWindow(qtw.QMainWindow):
                         # bookmark name will use the "name" attribute,
                         # if present, or else just the key:
                         bookmark_name = bookmark[1].get("name") or bookmark[0]
-                        # Create a button for the bookmark as a QAction,
-                        # which we'll add to the toolbar
-                        button = self.createAction(
-                            bookmark_name,
-                            (
-                                lambda url=bookmark[1].get("url"):
-                                self.browser_window.load(qtc.QUrl(url))
-                            ),
-                            qtg.QKeySequence.mnemonic(bookmark_name),
-                            None,
-                            bookmark[1].get("description")
+                        button = AdmNavButton(
+                            text=bookmark_name,
+                            url=bookmark[1].get('url'),
+                            shortcut=qtg.QKeySequence.mnemonic(bookmark_name),
+                            toolTip=bookmark[1].get('description'),
+                            objectName='navigation_button'
                         )
-                        self.navigation_bar.addAction(button)
-                        (self.navigation_bar.widgetForAction(button)
-                         .setObjectName("navigation_button"))
+                        button.clicked.connect(self.browser_window.load)
+                        self.navigation_bar.addWidget(button)
                 else:
                     action = self.nav_items.get(item, None)
                     if action:
