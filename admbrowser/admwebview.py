@@ -1,24 +1,13 @@
 import subprocess
 import re
 
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import (
-    QUrl,
-    QTemporaryFile,
-    QDir,
-    QSizeF
-)
-from PyQt5.QtWidgets import (
-    QAction,
-    QDialog,
-    QMenu
-)
-from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
-from PyQt5.QtWebEngineWidgets import (
-    QWebEngineView,
-    QWebEnginePage,
-    QWebEngineSettings
-)
+from PyQt5 import QtGui as qtg
+from PyQt5 import QtCore as qtc
+from PyQt5 import QtWidgets as qtw
+
+from PyQt5 import QtPrintSupport as qtp
+from PyQt5 import QtWebEngineWidgets as qtwe
+
 from PyQt5.QtNetwork import (
     QNetworkRequest
 )
@@ -27,7 +16,7 @@ from . import messages as msg
 from .admwebpage import AdmWebPage
 
 
-class AdmWebView(QWebEngineView):
+class AdmWebView(qtwe.QWebEngineView):
     """This is the webview for the application.
 
     It represents a browser window, either the main one or a popup.
@@ -50,17 +39,19 @@ class AdmWebView(QWebEngineView):
         self.setPage(AdmWebPage(None, self.webprofile, debug=self.debug))
         self.page().force_js_confirm = config.get("force_js_confirm")
         self.settings().setAttribute(
-            QWebEngineSettings.JavascriptCanOpenWindows,
+            qtwe.QWebEngineSettings.JavascriptCanOpenWindows,
             config.get("allow_popups")
         )
         if config.get('user_css'):
-            self.settings().setUserStyleSheetUrl(QUrl(config.get('user_css')))
+            self.settings().setUserStyleSheetUrl(
+                qtc.QUrl(config.get('user_css'))
+            )
         # self.settings().setAttribute(
         #     QWebEngineSettings.PrivateBrowsingEnabled,
         #     config.get("privacy_mode")
         # )
         self.settings().setAttribute(
-            QWebEngineSettings.LocalStorageEnabled,
+            qtwe.QWebEngineSettings.LocalStorageEnabled,
             True
         )
         # self.settings().setAttribute(
@@ -74,8 +65,8 @@ class AdmWebView(QWebEngineView):
 
         # add printing to context menu if it's allowed
         if config.get("allow_printing"):
-            self.print_action = QAction("Print", self)
-            self.print_action.setIcon(QIcon.fromTheme("document-print"))
+            self.print_action = qtw.QAction("Print", self)
+            self.print_action.setIcon(qtg.QIcon.fromTheme("document-print"))
             self.print_action.triggered.connect(self.print_webpage)
             self.page().printRequested.connect(self.print_webpage)
             self.print_action.setToolTip("Print this web page")
@@ -84,7 +75,11 @@ class AdmWebView(QWebEngineView):
         self.page().authenticationRequired.connect(
             self.auth_dialog
         )
-        # self.page().unsupportedContent.connect(self.handle_unsupported_content)
+
+        # connection to handle downloads
+        self.webprofile.downloadRequested.connect(
+            self.handle_unsupported_content
+        )
         # self.page().sslErrors.connect(
         #     self.sslErrorHandler
         # )
@@ -122,10 +117,12 @@ class AdmWebView(QWebEngineView):
         Overridden from QWebView,
         to provide right-click functions according to user settings.
         """
-        menu = QMenu(self)
+        menu = qtw.QMenu(self)
         for action in [
-                QWebEnginePage.Back, QWebEnginePage.Forward,
-                QWebEnginePage.Reload, QWebEnginePage.Stop
+                qtwe.QWebEnginePage.Back,
+                qtwe.QWebEnginePage.Forward,
+                qtwe.QWebEnginePage.Reload,
+                qtwe.QWebEnginePage.Stop
         ]:
             action = self.pageAction(action)
             if action.isEnabled():
@@ -157,6 +154,7 @@ class AdmWebView(QWebEngineView):
         content-handlers for a matching MIME type, and opens the file or
         displays an error per the configuration.
         """
+        print("handle_unsupported_content called")
         self.reply = reply
         self.content_type = self.reply.header(
             QNetworkRequest.ContentTypeHeader).toString()
@@ -164,7 +162,7 @@ class AdmWebView(QWebEngineView):
             '.*;\s*filename=(.*);',
             self.reply.rawHeader('Content-Disposition')
         )
-        self.content_filename = QUrl.fromPercentEncoding(
+        self.content_filename = qtc.QUrl.fromPercentEncoding(
             (self.content_filename and self.content_filename.group(1)) or
             ''
         )
@@ -195,11 +193,11 @@ class AdmWebView(QWebEngineView):
         Called when an unsupported content type is finished downloading.
         """
         file_path = (
-            QDir.toNativeSeparators(
-                QDir.tempPath() + "/XXXXXX_" + self.content_filename
+            qtc.QDir.toNativeSeparators(
+                qtc.QDir.tempPath() + "/XXXXXX_" + self.content_filename
             )
         )
-        myfile = QTemporaryFile(file_path)
+        myfile = qtc.QTemporaryFile(file_path)
         myfile.setAutoRemove(False)
         if myfile.open():
             myfile.write(self.reply.readAll())
@@ -226,15 +224,14 @@ class AdmWebView(QWebEngineView):
         if not url.isEmpty():
             # If whitelisting is enabled, and this isn't the start_url host,
             # check the url to see if the host's domain matches.
-            if (
-                self.config.get("whitelist") and
-                    not (
-                        url.host() ==
-                        QUrl(self.config.get("start_url")).host()) and
-                    not str(url.toString()) == 'about:blank'
-            ):
+            start_url_host = qtc.QUrl(self.config.get("start_url")).host()
+            if all([
+                    self.config.get("whitelist"),
+                    url.host() != start_url_host,
+                    str(url.toString()) != 'about:blank'
+            ]):
                 site_ok = False
-                pattern = re.compile(str("(^|.*\.)(" + "|".join(
+                pattern = re.compile(str(r"(^|.*\.)(" + "|".join(
                     [re.escape(w)
                      for w
                      in self.config.get("whitelist")]
@@ -265,16 +262,16 @@ class AdmWebView(QWebEngineView):
         """
         if not ok:
             start_url = self.config.get('start_url')
-            start_host = QUrl(start_url).host()
-            start_path = str(QUrl(start_url).path()).rstrip('/')
+            start_host = qtc.QUrl(start_url).host()
+            start_path = str(qtc.QUrl(start_url).path()).rstrip('/')
             failed_host = self.url().host()
             failed_path = str(self.url().path()).rstrip('/')
-            if (
-                    failed_host == start_host and
+            if all([
+                    failed_host == start_host,
                     failed_path == start_path
-            ):
+            ]):
                 self.setHtml(self.config.get("network_down_html")
-                             .format(**self.config), QUrl())
+                             .format(**self.config), qtc.QUrl())
                 self.debug(
                     "Start Url doesn't seem to be available;"
                     " displaying error"
@@ -286,7 +283,7 @@ class AdmWebView(QWebEngineView):
                 )
                 self.setHtml(
                     self.config.get("page_unavailable_html")
-                    .format(**self.config), QUrl()
+                    .format(**self.config), qtc.QUrl()
                 )
         return True
 
@@ -297,9 +294,9 @@ class AdmWebView(QWebEngineView):
         Should show a print dialog and print the webpage to the printer.
         """
         if self.print_settings.get("mode") == "high":
-            printer = QPrinter(mode=QPrinter.HighResolution)
+            printer = qtp.QPrinter(mode=qtp.QPrinter.HighResolution)
         else:
-            printer = QPrinter(mode=QPrinter.ScreenResolution)
+            printer = qtp.QPrinter(mode=qtp.QPrinter.ScreenResolution)
 
         if self.print_settings:
             if self.print_settings.get("size_unit"):
@@ -314,9 +311,9 @@ class AdmWebView(QWebEngineView):
                         "using default.".format(
                             self.print_settings.get("size_unit")
                         ))
-                    unit = QPrinter.Millimeter
+                    unit = qtp.QPrinter.Millimeter
             else:
-                unit = QPrinter.Millimeter
+                unit = qtp.QPrinter.Millimeter
 
             margins = (
                 list(self.print_settings.get("margins")) or
@@ -326,12 +323,12 @@ class AdmWebView(QWebEngineView):
             printer.setPageMargins(*margins)
 
             if self.print_settings.get("orientation") == "landscape":
-                printer.setOrientation(QPrinter.Landscape)
+                printer.setOrientation(qtp.QPrinter.Landscape)
             else:
-                printer.setOrientation(QPrinter.Portrait)
+                printer.setOrientation(qtp.QPrinter.Portrait)
 
             if self.print_settings.get("paper_size"):
-                printer.setPaperSize(QSizeF(
+                printer.setPaperSize(qtc.QSizeF(
                     *self.print_settings.get("paper_size")
                 ), unit)
 
@@ -341,9 +338,9 @@ class AdmWebView(QWebEngineView):
                 )
 
         if not self.print_settings.get("silent"):
-            print_dialog = QPrintDialog(printer, self)
+            print_dialog = qtp.QPrintDialog(printer, self)
             print_dialog.setWindowTitle("Print Page")
-            if not print_dialog.exec_() == QDialog.Accepted:
+            if not print_dialog.exec_() == qtw.QDialog.Accepted:
                 return False
 
         self.print_(printer)

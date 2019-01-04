@@ -1,25 +1,20 @@
-from PyQt5.QtCore import (
-    QTimer,
-    QObject,
-    QEvent,
-    pyqtSignal,
-)
+from PyQt5 import QtCore as qtc
 
 
-class InactivityFilter(QTimer):
+class InactivityFilter(qtc.QTimer):
     """This defines an inactivity filter.
 
     It's basically a timer that resets when user "activity"
     (Mouse/Keyboard events) are detected in the main application.
     """
-    activity = pyqtSignal()
+    activity = qtc.pyqtSignal()
 
     monitored_events = (
-        QEvent.MouseMove,
-        QEvent.MouseButtonPress,
-        QEvent.HoverMove,
-        QEvent.KeyPress,
-        QEvent.KeyRelease
+        qtc.QEvent.MouseMove,
+        qtc.QEvent.MouseButtonPress,
+        qtc.QEvent.HoverMove,
+        qtc.QEvent.KeyPress,
+        qtc.QEvent.KeyRelease
     )
 
     def __init__(self, timeout=0, parent=None):
@@ -39,4 +34,4 @@ class InactivityFilter(QTimer):
         if event.type() in self.monitored_events:
             self.activity.emit()
             self.start(self.timeout_time)
-        return QObject.eventFilter(self, object, event)
+        return qtc.QObject.eventFilter(self, object, event)

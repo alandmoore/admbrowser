@@ -15,23 +15,10 @@ import datetime
 
 import yaml
 
-from PyQt5.QtGui import QIcon, QKeySequence
-from PyQt5.QtCore import (
-    QUrl,
-    Qt,
-    QCoreApplication,
-)
-from PyQt5.QtWidgets import (
-    QMainWindow,
-    QAction,
-    QWidget,
-    QApplication,
-    QSizePolicy,
-    QToolBar,
-)
-from PyQt5.QtWebEngineWidgets import (
-    QWebEngineProfile,
-)
+from PyQt5 import QtGui as qtg
+from PyQt5 import QtCore as qtc
+from PyQt5 import QtWidgets as qtw
+from PyQt5 import QtWebEngineWidgets as qtwe
 
 from . import messages as msg
 from .admwebview import AdmWebView
@@ -40,7 +27,7 @@ from .inactivity_filter import InactivityFilter
 from .defaults import CONFIG_OPTIONS
 
 
-class MainWindow(QMainWindow):
+class MainWindow(qtw.QMainWindow):
 
     """This is the main application window class
 
@@ -85,13 +72,13 @@ class MainWindow(QMainWindow):
             # which should whitelist just the start_url and bookmark urls.
             if type(self.config.get("whitelist")) is not list:
                 self.whitelist = []
-            self.whitelist.append(str(QUrl(
+            self.whitelist.append(str(qtc.QUrl(
                 self.config.get("start_url")
             ).host()))
             bookmarks = self.config.get("bookmarks")
             if bookmarks:
                 self.whitelist += [
-                    str(QUrl(b.get("url")).host())
+                    str(qtc.QUrl(b.get("url")).host())
                     for k, b in bookmarks.items()
                 ]
                 self.whitelist = set(self.whitelist)  # uniquify and optimize
@@ -112,10 +99,10 @@ class MainWindow(QMainWindow):
         Just a shortcut function Originally borrowed from
         'Rapid GUI Development with PyQT' by Mark Summerset
         """
-        action = QAction(text, self)
+        action = qtw.QAction(text, self)
         if icon is not None:
-            action.setIcon(QIcon.fromTheme(
-                icon, QIcon(":/{}.png".format(icon))
+            action.setIcon(qtg.QIcon.fromTheme(
+                icon, qtg.QIcon(":/{}.png".format(icon))
             ))
         if shortcut is not None and not shortcut.isEmpty():
             action.setShortcut(shortcut)
@@ -134,9 +121,9 @@ class MainWindow(QMainWindow):
 
         # create private/nonprivate webprofile per settings
         webprofile = (
-            QWebEngineProfile()
+            qtwe.QWebEngineProfile()
             if self.config.get('privacy_mode')
-            else QWebEngineProfile.defaultProfile()
+            else qtwe.QWebEngineProfile.defaultProfile()
         )
         self.debug("Browser session is private: {}"
                    .format(webprofile.isOffTheRecord()))
@@ -185,11 +172,11 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.browser_window)
 
         # Icon theme setting
-        QIcon.setThemeName(self.config.get("icon_theme"))
+        qtg.QIcon.setThemeName(self.config.get("icon_theme"))
 
         self.setCentralWidget(self.browser_window)
         self.debug("loading {}".format(self.config.get("start_url")))
-        self.browser_window.setUrl(QUrl(self.config.get("start_url")))
+        self.browser_window.setUrl(qtc.QUrl(self.config.get("start_url")))
 
         # Window size settings
         window_size = self.config.get("window_size", '').lower()
@@ -209,9 +196,9 @@ class MainWindow(QMainWindow):
 
         # Set up the top navigation bar if it's configured to exist
         if self.config.get("navigation"):
-            self.navigation_bar = QToolBar("Navigation")
+            self.navigation_bar = qtw.QToolBar("Navigation")
             self.navigation_bar.setObjectName("navigation")
-            self.addToolBar(Qt.TopToolBarArea, self.navigation_bar)
+            self.addToolBar(qtc.Qt.TopToolBarArea, self.navigation_bar)
             self.navigation_bar.setMovable(False)
             self.navigation_bar.setFloatable(False)
 
@@ -227,21 +214,21 @@ class MainWindow(QMainWindow):
                         self.config.get("quit_button_mode"),
                         self.reset_browser
                     ),
-                    QKeySequence("Alt+F"),
+                    qtg.QKeySequence("Alt+F"),
                     None,
                     quit_button_tooltip
                 ),
                 "zoom_in": self.createAction(
                     "Zoom In",
                     self.zoom_in,
-                    QKeySequence("Alt++"),
+                    qtg.QKeySequence("Alt++"),
                     "zoom-in",
                     "Increase the size of the text and images on the page"
                 ),
                 "zoom_out": self.createAction(
                     "Zoom Out",
                     self.zoom_out,
-                    QKeySequence("Alt+-"),
+                    qtg.QKeySequence("Alt+-"),
                     "zoom-out",
                     "Decrease the size of text and images on the page"
                 )
@@ -250,7 +237,7 @@ class MainWindow(QMainWindow):
                 self.nav_items["print"] = self.createAction(
                     "Print",
                     self.browser_window.print_webpage,
-                    QKeySequence("Ctrl+p"),
+                    qtg.QKeySequence("Ctrl+p"),
                     "document-print",
                     "Print this page"
                 )
@@ -261,10 +248,10 @@ class MainWindow(QMainWindow):
                     self.navigation_bar.addSeparator()
                 elif item == "spacer":
                     # an expanding spacer.
-                    spacer = QWidget()
+                    spacer = qtw.QWidget()
                     spacer.setSizePolicy(
-                        QSizePolicy.Expanding,
-                        QSizePolicy.Preferred
+                        qtw.QSizePolicy.Expanding,
+                        qtw.QSizePolicy.Preferred
                     )
                     self.navigation_bar.addWidget(spacer)
                 elif item == "bookmarks":
@@ -281,9 +268,9 @@ class MainWindow(QMainWindow):
                             bookmark_name,
                             (
                                 lambda url=bookmark[1].get("url"):
-                                self.browser_window.load(QUrl(url))
+                                self.browser_window.load(qtc.QUrl(url))
                             ),
-                            QKeySequence.mnemonic(bookmark_name),
+                            qtg.QKeySequence.mnemonic(bookmark_name),
                             None,
                             bookmark[1].get("description")
                         )
@@ -310,7 +297,7 @@ class MainWindow(QMainWindow):
         self.really_quit = self.createAction(
             "",
             self.close,
-            QKeySequence("Ctrl+Alt+Q"),
+            qtg.QKeySequence("Ctrl+Alt+Q"),
             None,
             ""
         )
@@ -319,7 +306,7 @@ class MainWindow(QMainWindow):
         # Call a reset function after timeout
         if inactivity_timeout != 0:
             self.event_filter = InactivityFilter(inactivity_timeout)
-            QCoreApplication.instance().installEventFilter(self.event_filter)
+            qtc.QCoreApplication.instance().installEventFilter(self.event_filter)
             self.browser_window.page().installEventFilter(self.event_filter)
             self.event_filter.timeout.connect(
                 to_mode_callbacks.get(
@@ -345,7 +332,7 @@ class MainWindow(QMainWindow):
         if self.config.get("navigation"):
             self.navigation_bar.hide()
         self.browser_window.setZoomFactor(self.config.get("zoom_factor"))
-        self.browser_window.load(QUrl(self.config.get("screensaver_url")))
+        self.browser_window.load(qtc.QUrl(self.config.get("screensaver_url")))
         self.event_filter.timeout.disconnect()
         self.event_filter.activity.connect(self.reset_browser)
 
@@ -405,7 +392,7 @@ class MainWindow(QMainWindow):
 
 # ######## Main application code begins here ################## #
 
-class ADMBrowserApp(QApplication):
+class ADMBrowserApp(qtw.QApplication):
 
     def __init__(self, args):
         super().__init__(args)
@@ -502,9 +489,10 @@ class ADMBrowserApp(QApplication):
                         with open(filename, 'r') as fh:
                             self.config[key] = fh.read()
                     except IOError:
-                        self.debug("Could not open file {} for reading.".format(
-                            filename
-                        ))
+                        self.debug(
+                            "Could not open file {} for reading.".format(
+                                filename
+                            ))
                         self.config[key] = default_val
             else:
                 set_values = [
