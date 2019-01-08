@@ -15,9 +15,9 @@ class AdmWebPage(QWebEnginePage):
         self.debug = debug or (lambda x: None)
         self.debug(profile.httpUserAgent())
         if not profile:
-            super(AdmWebPage, self).__init__(parent)
+            super().__init__(parent)
         else:
-            super(AdmWebPage, self).__init__(profile, parent)
+            super().__init__(profile, parent)
 
     def javaScriptConsoleMessage(self, message, line, sourceid):
         """Handle console.log messages from javascript.
@@ -40,11 +40,11 @@ class AdmWebPage(QWebEnginePage):
         elif self.force_js_confirm == "deny":
             return False
         else:
-            return QWebEnginePage.javaScriptConfirm(self, frame, msg)
+            return super().javaScriptConfirm(self, frame, msg)
 
     def javaScriptAlert(self, frame, msg):
         if not self.suppress_alerts:
-            return QWebEnginePage.javaScriptAlert(self, frame, msg)
+            return super().javaScriptAlert(self, frame, msg)
 
     def certificateError(self, error):
         """Handle SSL errors in the browser.
