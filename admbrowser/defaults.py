@@ -85,7 +85,12 @@ CONFIG_OPTIONS = {
         "is_file": True
     },
     "print_settings": {"default": None, "type": dict},
-    "privacy_mode": {"default": True, "type": bool},
+    "privacy_mode": {
+        "default": True,
+        "type": bool,
+        "switches": ('--privacy',),
+        "action": "store_true"
+    },
     "proxy_server": {
         "default": None,
         "type": str,
