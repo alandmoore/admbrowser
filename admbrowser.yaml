@@ -212,12 +212,6 @@ icon_theme:  "oxygen"
 
 #user_agent: "ADMBrowser"
 
-# user_css allows a custom CSS file to be applied to each page ADMBrowser visits. Accepts any URL supported by QT
-# Default: none
-
-#user_css: file://etc/admbrowser.css
-
-
 #############
 # Bookmarks #
 #############

@@ -130,7 +130,6 @@ CONFIG_OPTIONS = {
         "values": ["reset", "close", "screensaver"]
     },
     "user_agent": {"default": None, "type": str},
-    "user_css": {"default": None, "type": str},
     "whitelist": {"default": None},  # don't check type here
     "window_size": {
         "default": "max",

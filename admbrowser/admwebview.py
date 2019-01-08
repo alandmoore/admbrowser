@@ -30,38 +30,19 @@ class AdmWebView(qtwe.QWebEngineView):
           - parent: The parent widget/window
           - debug:  The function/method for posting debug strings
         """
-        super(AdmWebView, self).__init__(parent)
+        super().__init__(parent)
         self.debug = debug or (lambda x: None)
         self.kwargs = kwargs
         self.config = config
         # create a web profile for the pages
         self.webprofile = kwargs.get("webprofile")
+
         self.setPage(AdmWebPage(None, self.webprofile, debug=self.debug))
         self.page().force_js_confirm = config.get("force_js_confirm")
-        self.settings().setAttribute(
-            qtwe.QWebEngineSettings.JavascriptCanOpenWindows,
-            config.get("allow_popups")
-        )
-        if config.get('user_css'):
-            self.settings().setUserStyleSheetUrl(
-                qtc.QUrl(config.get('user_css'))
-            )
-        # self.settings().setAttribute(
-        #     QWebEngineSettings.PrivateBrowsingEnabled,
-        #     config.get("privacy_mode")
-        # )
-        self.settings().setAttribute(
-            qtwe.QWebEngineSettings.LocalStorageEnabled,
-            True
-        )
-        # self.settings().setAttribute(
-        #     QWebEngineSettings.PluginsEnabled,
-        #     config.get("allow_plugins")
-        # )
-        # self.page().setForwardUnsupportedContent(
-        #     config.get("allow_external_content")
-        # )
         self.setZoomFactor(config.get("zoom_factor"))
+
+        # configure the QWebSettings
+        self._configureSettings(config)
 
         # add printing to context menu if it's allowed
         if config.get("allow_printing"):
@@ -86,13 +67,36 @@ class AdmWebView(qtwe.QWebEngineView):
         self.urlChanged.connect(self.onLinkClick)
         self.loadFinished.connect(self.onLoadFinished)
 
+    def _configureSettings(self, config):
+        settings = qtwe.QWebEngineSettings.defaultSettings
+
+        # Popup settings
+        settings().setAttribute(
+            qtwe.QWebEngineSettings.JavascriptCanOpenWindows,
+            config.get("allow_popups")
+        )
+        # local storage
+        settings().setAttribute(
+            qtwe.QWebEngineSettings.LocalStorageEnabled,
+            True
+        )
+        # Plugins
+        settings().setAttribute(
+            qtwe.QWebEngineSettings.PluginsEnabled,
+            config.get("allow_plugins")
+        )
+        self.debug(
+            "settings configured"
+        )
+
     def createWindow(self, type):
         """Handle requests for a new browser window.
 
         Method called whenever the browser requests a new window
         (e.g., <a target='_blank'> or window.open()).
-        Overridden from QWebView to allow for popup windows, if enabled.
+        Overridden from QWebEngineView to allow for popup windows, if enabled.
         """
+        self.debug("Popup Requested with argument: {}".format(type))
         if self.config.get("allow_popups"):
             self.popup = AdmWebView(
                 self.config,
