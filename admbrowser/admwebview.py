@@ -116,20 +116,27 @@ class AdmWebView(qtwe.QWebEngineView):
         """
         self.debug("Popup Requested with argument: {}".format(type))
         if self.config.get("allow_popups"):
-            self.popup = AdmWebView(
+            self.debug(self.kwargs)
+            # we need to create a widget to contain the webview
+            # since QWebEngineView objects apparently don't work as top-levels?
+            self.popup = qtw.QWidget()
+            self.popup.setLayout(qtw.QVBoxLayout())
+            webview = AdmWebView(
                 self.config,
                 parent=None,
+                debug=self.debug,
                 **self.kwargs
             )
+            self.popup.layout().addWidget(webview)
             # This assumes the window manager has an "X" icon
             # for closing the window somewhere to the right.
-            self.popup.setObjectName("web_content")
+            webview.setObjectName("web_content")
             self.popup.setWindowTitle(
                 "Click the 'X' to close this window! ---> "
             )
-            self.popup.page().windowCloseRequested.connect(self.popup.close)
+            webview.page().windowCloseRequested.connect(self.popup.close)
             self.popup.show()
-            return self.popup
+            return webview
         else:
             self.debug("Popup not loaded on {}".format(self.url().toString()))
 
