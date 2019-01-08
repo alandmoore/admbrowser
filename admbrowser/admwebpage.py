@@ -20,7 +20,7 @@ class AdmWebPage(QWebEnginePage):
             super().__init__(profile, parent)
         debug("Profile is: {}".format(self.profile()))
 
-    def javaScriptConsoleMessage(self, message, line, sourceid):
+    def javaScriptConsoleMessage(self, level, message, line, sourceid):
         """Handle console.log messages from javascript.
 
         Overridden from QWebEnginePage so that we can
