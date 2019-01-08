@@ -34,15 +34,32 @@ class AdmWebView(qtwe.QWebEngineView):
         self.debug = debug or (lambda x: None)
         self.kwargs = kwargs
         self.config = config
-        # create a web profile for the pages
-        self.webprofile = kwargs.get("webprofile")
 
-        self.setPage(AdmWebPage(None, self.webprofile, debug=self.debug))
-        self.page().force_js_confirm = config.get("force_js_confirm")
-        self.setZoomFactor(config.get("zoom_factor"))
+        ################################
+        # Set up QWebEnginePage object #
+        ################################
+
+        self.webprofile = kwargs.get("webprofile")
+        # it's important to keep a reference to this
+        # Otherwise a generic QWebEnginePage will get used instead
+        self._page = AdmWebPage(
+            config,
+            None,
+            self.webprofile,
+            debug=self.debug
+        )
+        self.setPage(self._page)
+        debug("Page profile in use is: {}".format(self.page().profile()))
+        debug("IS OTR: {}".format(self.page().profile().isOffTheRecord()))
+        ##################
+        # Configurations #
+        ##################
 
         # configure the QWebSettings
         self._configureSettings(config)
+
+        # zoom factor
+        self.setZoomFactor(config.get("zoom_factor"))
 
         # add printing to context menu if it's allowed
         if config.get("allow_printing"):
@@ -51,6 +68,10 @@ class AdmWebView(qtwe.QWebEngineView):
             self.print_action.triggered.connect(self.print_webpage)
             self.page().printRequested.connect(self.print_webpage)
             self.print_action.setToolTip("Print this web page")
+
+        ###############################
+        # Signal and Slot connections #
+        ###############################
 
         # connections for admwebview
         self.page().authenticationRequired.connect(
@@ -61,9 +82,6 @@ class AdmWebView(qtwe.QWebEngineView):
         self.webprofile.downloadRequested.connect(
             self.handle_unsupported_content
         )
-        # self.page().sslErrors.connect(
-        #     self.sslErrorHandler
-        # )
         self.urlChanged.connect(self.onLinkClick)
         self.loadFinished.connect(self.onLoadFinished)
 
@@ -163,7 +181,7 @@ class AdmWebView(qtwe.QWebEngineView):
         self.content_type = self.reply.header(
             QNetworkRequest.ContentTypeHeader).toString()
         self.content_filename = re.match(
-            '.*;\s*filename=(.*);',
+            r'.*;\s*filename=(.*);',
             self.reply.rawHeader('Content-Disposition')
         )
         self.content_filename = qtc.QUrl.fromPercentEncoding(

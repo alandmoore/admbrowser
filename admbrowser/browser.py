@@ -129,11 +129,9 @@ class MainWindow(qtw.QMainWindow):
         self.debug("Browser session is private: {}"
                    .format(webprofile.isOffTheRecord()))
 
-        # Set user agent string
-        if self.config.get("user_agent"):
-            webprofile.setHttpUserAgent(self.config["user_agent"])
-            self.debug('Set user agent to "{}"'
-                       .format(webprofile.httpUserAgent()))
+        # set the user agent string
+        if self.config.get('user_agent'):
+            webprofile.setHttpUserAgent(self.config['user_agent'])
 
         # use webprofile
         self.webprofile = webprofile
@@ -556,7 +554,7 @@ def main():
     # Create the qapplication object,
     # so it can interpret the qt-specific CLI args
     app = ADMBrowserApp(sys.argv)
-    app.exec_()
+    sys.exit(app.exec_())
 
 
 if __name__ == "__main__":

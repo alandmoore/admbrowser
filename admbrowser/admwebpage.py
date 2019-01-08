@@ -10,14 +10,15 @@ class AdmWebPage(QWebEnginePage):
 
     This was subclassed so that some functions can be overridden.
     """
-    def __init__(self, parent=None, profile=None, debug=None):
+    def __init__(self, config, parent=None, profile=None, debug=None):
         """Constructor for the class"""
         self.debug = debug or (lambda x: None)
-        self.debug(profile.httpUserAgent())
+        self.config = config
         if not profile:
             super().__init__(parent)
         else:
             super().__init__(profile, parent)
+        debug("Profile is: {}".format(self.profile()))
 
     def javaScriptConsoleMessage(self, message, line, sourceid):
         """Handle console.log messages from javascript.
@@ -35,15 +36,15 @@ class AdmWebPage(QWebEnginePage):
         Overridden from QWebEnginePage so that we can (if configured)
         force yes/no on these dialogs.
         """
-        if self.force_js_confirm == "accept":
+        if self.config.get('force_js_confirm') == "accept":
             return True
-        elif self.force_js_confirm == "deny":
+        elif self.config.get('force_js_confirm') == "deny":
             return False
         else:
             return super().javaScriptConfirm(self, frame, msg)
 
     def javaScriptAlert(self, frame, msg):
-        if not self.suppress_alerts:
+        if not self.config.get('suppress_alerts'):
             return super().javaScriptAlert(self, frame, msg)
 
     def certificateError(self, error):
