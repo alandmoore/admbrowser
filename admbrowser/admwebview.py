@@ -22,6 +22,9 @@ class AdmWebView(qtwe.QWebEngineView):
     It represents a browser window, either the main one or a popup.
     It's a simple wrapper around QWebView that configures some basic settings.
     """
+
+    downloads = []
+
     def __init__(self, config, parent=None, debug=None, **kwargs):
         """Constructor for the AdmWebView
 
@@ -80,7 +83,7 @@ class AdmWebView(qtwe.QWebEngineView):
 
         # connection to handle downloads
         self.webprofile.downloadRequested.connect(
-            self.handle_unsupported_content
+            self.onDownloadRequested
         )
         self.urlChanged.connect(self.onLinkClick)
         self.loadFinished.connect(self.onLoadFinished)
@@ -175,67 +178,60 @@ class AdmWebView(qtwe.QWebEngineView):
         if (default_password):
             authenticator.setPassword(default_password)
 
-    def handle_unsupported_content(self, reply):
+    def onDownloadRequested(self, download_item):
         """Handle requests to open non-web content
 
-        Called basically when the reply from the request is not HTML
-        or something else renderable by qwebview.  It checks the configured
-        content-handlers for a matching MIME type, and opens the file or
-        displays an error per the configuration.
+        Called whenever a download is requested.
         """
-        print("handle_unsupported_content called")
-        self.reply = reply
-        self.content_type = self.reply.header(
-            QNetworkRequest.ContentTypeHeader).toString()
-        self.content_filename = re.match(
-            r'.*;\s*filename=(.*);',
-            self.reply.rawHeader('Content-Disposition')
-        )
-        self.content_filename = qtc.QUrl.fromPercentEncoding(
-            (self.content_filename and self.content_filename.group(1)) or
-            ''
-        )
-        content_url = self.reply.url()
-        self.debug(
-            "Loading url {} of type {}".format(
-                content_url.toString(), self.content_type
-            ))
-        if not self.config.get("content_handlers").get(str(self.content_type)):
+        dl_url = download_item.url().toString()
+        dl_mime = download_item.mimeType()
+        dl_path = download_item.path()
+        if not self.config.get('allow_external_content'):
+            self.debug(
+                "Download request ignored for {} (not allowed)".format(dl_url)
+            )
+            download_item.cancel()
+        elif not self.config.get("content_handlers").get(dl_mime):
             self.setHtml(msg.UNKNOWN_CONTENT_TYPE.format(
-                mime_type=self.content_type,
-                file_name=self.content_filename,
-                url=content_url.toString()))
+                mime_type=dl_mime,
+                file_name=dl_path,
+                url=dl_url
+            ))
+            self.debug(
+                'Download request ignored for mime type {} (no handler)'.format(dl_mime)
+            )
+            download_item.cancel()
         else:
+            self.downloads.append(download_item)
+            self.debug(
+                "Starting download of url {} of type {}".format(
+                    dl_url,
+                    dl_mime
+                ))
             if str(self.url().toString()) in ('', 'about:blank'):
                 self.setHtml(msg.DOWNLOADING_MESSAGE.format(
-                    filename=self.content_filename,
-                    mime_type=self.content_type,
-                    url=content_url.toString()))
+                    filename=dl_path,
+                    mime_type=dl_mime,
+                    url=dl_url
+                ))
             else:
-                # print(self.url())
-                self.load(self.url())
-            self.reply.finished.connect(self.display_downloaded_content)
+                download_item.accept()
+            download_item.finished.connect(self.display_downloaded_content)
 
     def display_downloaded_content(self):
         """Open downloaded non-html content in a separate application.
 
         Called when an unsupported content type is finished downloading.
         """
-        file_path = (
-            qtc.QDir.toNativeSeparators(
-                qtc.QDir.tempPath() + "/XXXXXX_" + self.content_filename
-            )
-        )
-        myfile = qtc.QTemporaryFile(file_path)
-        myfile.setAutoRemove(False)
-        if myfile.open():
-            myfile.write(self.reply.readAll())
-            myfile.close()
-            subprocess.Popen([
-                (self.config.get("content_handlers")
-                 .get(str(self.content_type))),
-                myfile.fileName()
-            ])
+
+        finished = [x for x in self.downloads if x.isFinished]
+        self.debug('display downloaded content for downloads: {}'.format(finished))
+        for dl in finished:
+            self.downloads.remove(dl)
+            mime = dl.mimeType()
+            path = dl.path()
+            handler = self.config.get('content_handlers').get(mime)
+            subprocess.Popen([handler, path])
 
             # Sometimes downloading files opens an empty window.
             # So if the current window has no URL, close it.
@@ -288,7 +284,16 @@ class AdmWebView(qtwe.QWebEngineView):
         if it's not, we display either the 404 error (if
         it's just some random page), or a "network is down" message
         (if it's the start page that failed).
+
+        Unfortunately this method is broken. 'OK' is not a reliable value,
+        it often shows false when there is no apparent problem at all,
+        and to make things worse, QtWebEngine has no facility for inspecting
+        the errors that lead to a false 'OK'.
         """
+        print("LoadOK reported: {}".format(ok))
+        return True
+
+        # This is the code that should run.
         if not ok:
             start_url = self.config.get('start_url')
             start_host = qtc.QUrl(start_url).host()

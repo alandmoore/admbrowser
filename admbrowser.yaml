@@ -269,5 +269,5 @@ bookmarks:
 # The filename of the downloaded data will be passed as an argument
 
 content_handlers:
-  "application/pdf": "acroread"
+  "application/pdf": "okular"
   "application/vnd.oasis.opendocument.text": "libreoffice"
