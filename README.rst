@@ -49,7 +49,7 @@ Requirements
 - PyQT5 (v.5.5 or higher)
 - Python YAML library (http://pyyaml.org)
 
-It should work on any platform, but it's only been tested on Arch Linux.  
+It should work on any platform, but it's only been tested on Arch Linux.
 
 Usage
 =====
@@ -76,8 +76,8 @@ At a minimum, you need to specify a "start url" using either the config file or 
 -n, --no-navigation     Turn off the navigation panel (back, forward, home, shortcuts, etc).  Make sure your actual web application is fully navigable!
 -p, --popups            Enable the creation of new windows when a link is clicked that opens in a new window, or javascript tries to open a window
 -t, --timeout           The timeout for the inactivity monitor.  After this many seconds of inactivity, reset the browser
--u, --user	        Set the default username to be sent when a site requests authentication
--w, --password	        Set the default password to be sent when a site requests authentication
+-u, --user          Set the default username to be sent when a site requests authentication
+-w, --password          Set the default password to be sent when a site requests authentication
 -z, --zoom              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
 ====================    =====================================================================================================================================
 
@@ -91,8 +91,8 @@ The sample configuration file is fully commented, and should be pretty easy to c
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 Option Name            Default Value      Explanation
 ====================== ===============    ===============================================================================================================================================================================================================================================================
-allow_external_content False              *CURRENTLY BROKEN* Whether or not to allow non-html content, e.g. PDF files.  If this is true, you need to specify a content handler for the MIME type or a 404 error, "Network Error", or blank page will likely be displayed to the user.
-allow_plugins          False              *CURRENTLY BROKEN* If true, enables the use of plugins like flash, java, etc.
+allow_external_content False              Whether or not to allow non-html content, e.g. PDF files.  If this is true, you need to specify a content handler for the MIME type or a 404 error, "Network Error", or blank page will likely be displayed to the user.
+allow_plugins          False              If true, enables the use of plugins like flash, java, etc.
 allow_popups           False              Whether or not to allow navigation that requires opening a new browser window, such as javascript "window.open()" calls or links with a target of "_blank".  If False, the navigation will be ignored.  If true, a new window will be created as expected.
 force_js_confirm       "ask"              If set to "accept" or "deny", will override any JavaScript are-you-sure-you-want-to-exit dialog boxes with the specified answer, if set to "ask" (the default) will ask the user each time.
 suppress_alerts        False              If True, blocks JavaScript popup alerts from appearing, or shows them when False.
@@ -103,16 +103,15 @@ default_user           (empty)            default username to send when pages re
 icon_theme             (qt5 default)      Icon theme to use for navigation icons
 navigation             True               Display the navigation bar at the top (back/forward/reload/bookmarks/quit)
 navigation_layout      (see below)        Sets the layout of the navigation bar.  See the detailed explanation below.
-network_down_html      (empty)            The full path to a file containing HTML which will be displayed when the start_url page cannot be loaded, which probably indicates some kind of network error.
-page_unavailable_html  (empty)            The full path to a file containing HTML which will be displayed when a page cannot be loaded, either because it's not accessible or blocked by security restrictions.
-privacy_mode           True               *CURRENTLY BROKEN* Enable or disable "private browsing mode" on the webkit widget.
+network_down_html      (empty)            *CURRENTLY_BROKEN* The full path to a file containing HTML which will be displayed when the start_url page cannot be loaded, which probably indicates some kind of network error.
+page_unavailable_html  (empty)            *CURRENTLY_BROKEN* The full path to a file containing HTML which will be displayed when a page cannot be loaded, either because it's not accessible or blocked by security restrictions.
+privacy_mode           True               Enable or disable "private browsing mode" on the webkit widget.
 user_agent             (qt5 default)      Overrides the default user agent string.
-user_css               (empty)            Sets a default CSS file applied to all pages viewed. Option accepts any URL supported by QT, i.e: "file://etc/wcg.css" or "http://example.com/style.css".
 proxy_server           (empty)            Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
 quit_button_mode       reset              Just like timeout_mode, only this is the action taken when the quit button is pressed (same options)
 quit_button_text       "I'm &Finished"    Text to display on the quit/reset button.  Can include an accelerator indicator (&).
 screensaver_url        about:blank        The URL to visit when idle.  Only matters when timeout_mode is 'screensaver' and 'timeout' is nonzero.
-ssl_mode               strict             *CURRENTLY BROKEN* Defines how the browser handles ssl certificate errors.  "strict" will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
+ssl_mode               strict             Defines how the browser handles ssl certificate errors.  "strict" will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
 start_url              about:blank        The starting URL or "home page"
 stylesheet             (empty)            Filename of a qss stylesheet to use for styling the application window.  See example file.
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
@@ -149,8 +148,6 @@ This is more compact, but the downside is that you have no control over the orde
 
 Content Handlers
 ----------------
-
-*CURRENTLY BROKEN*
 
 If you're allowing external content to be launched, the "content_handlers" array allows you to specify in which programs the external content will open by MIME type.
 The syntax looks like this::
@@ -281,17 +278,20 @@ mode                   "screen"           Sets what resolution the printer will 
 Bugs and Limitations
 ====================
 
-- There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
+The following are known limitations:
 
-If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/admbrowser/issues. If your "bug" is really a feature request, see below.
+- There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
+- Only one popup window can exist at a time (if they're enabled at all).
+-
 
 The following issues showed up with the port from QtWebKit to QtWebEngine:
 
-- "privacy_mode" doesn't work.  The option to enable privacy mode no longer exists in QtWebEngine.
-- Plugins don't work at all.  There is no Flash support whatsoever, because QtWebEngine doesn't support NPAPI plugins and doesn't include Pepper Flash.
-- The handling of downloaded files is all broken.  There's not yet a way to do this in QtWebEngine (supposed to arrive in Qt5.5)
-- Certificate Errors result in the page just not loading.  No errors are logged or anything.  This is due to QtWebEngine behavior, hopefully it will be fixed in future versions of the library.
+- Custom 404/Network Error pages don't work.  This is due to a QtWebkitEngine limitation which will hopefully change someday.
+- Sometimes ADMBrowser crashes with (C++) memory allocation errors.
 - Probably much more that hasn't been tested yet.
+
+If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/admbrowser/issues. If your "bug" is really a feature request, see below.
+
 
 
 Contributing
@@ -306,7 +306,7 @@ If you're contributing code, please follow these best practices:
 
 - Follow PEP8; use a linter/checker like pyflakes, pep8, or pylint and
   make sure your code doesn't generate errors.
-  
+
   - This includes the 79 character limit.  Yes, I'm like that.
   - Use snake_case variables, not camelCase (except for PyQt stuff we can't change)
   - Use .format() rather than the old printf-style (%) substitution
@@ -315,9 +315,9 @@ If you're contributing code, please follow these best practices:
 - Please document per PEP257; functions & classes need a docstring.
 - Fork the project on GitHub, make your changes, and submit a pull request.
   You will probably be asked to change or fix some things, that's just how it goes.
-    
-    
-  
+
+
+
 Making Feature Requests
 =======================
 
