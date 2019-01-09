@@ -76,7 +76,7 @@ At a minimum, you need to specify a "start url" using either the config file or 
 -n, --no-navigation     Turn off the navigation panel (back, forward, home, shortcuts, etc).  Make sure your actual web application is fully navigable!
 -p, --popups            Enable the creation of new windows when a link is clicked that opens in a new window, or javascript tries to open a window
 -t, --timeout           The timeout for the inactivity monitor.  After this many seconds of inactivity, reset the browser
--u, --user          Set the default username to be sent when a site requests authentication
+-u, --user              Set the default username to be sent when a site requests authentication
 -w, --password          Set the default password to be sent when a site requests authentication
 -z, --zoom              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
 ====================    =====================================================================================================================================
@@ -263,17 +263,17 @@ ADMBrowser supports configuring default printer settings and allows printing wit
 
 The following options are supported:
 
-====================== ===============    ===============================================================================================================================================================================================================================================================
-Option Name            Default Value      Explanation
-====================== ===============    ===============================================================================================================================================================================================================================================================
-silent                 False              When True, ADMBrowser will print immediately without showing the printing dialog box.
-orientation            "portrait"         Specifies printing in portrait or landscape orientation.
-size_unit              "millimeter"       Specifies what unit of measure used by the paper_size and margin variables. Can be "millimeter", "point", "inch", "pica", "didot", "cicero", or "devicepixel".
-margins                (printer default)  Specifies the printer margins as a list in the form: [left, top, right, bottom]. Example: [5, 3.5, 6, 2.4]. Units are specified by the size_unit variable.
-paper_size             (printer default)  Specifies the paper size as a list in the form: [width, height]. Example: [500, 650.5]. Units are specified by the size_unit variable.
-resolution             (printer default)  Specifies the printer's resolution in ppi (pixels per inch).
-mode                   "screen"           Sets what resolution the printer will use, "screen": the screen's resolution (the default) or "high": the printer's maximum resolution
-====================== ===============    ===============================================================================================================================================================================================================================================================
+====================== =================    ==============================================================================================================================================================
+Option Name            Default Value        Explanation
+====================== =================    ==============================================================================================================================================================
+silent                 False                When True, ADMBrowser will print immediately without showing the printing dialog box.
+orientation            "portrait"           Specifies printing in portrait or landscape orientation.
+size_unit              "millimeter"         Specifies what unit of measure used by the paper_size and margin variables. Can be "millimeter", "point", "inch", "pica", "didot", "cicero", or "devicepixel".
+margins                (printer default)    Specifies the printer margins as a list in the form: [left, top, right, bottom]. Example: [5, 3.5, 6, 2.4]. Units are specified by the size_unit variable.
+paper_size             (printer default)    Specifies the paper size as a list in the form: [width, height]. Example: [500, 650.5]. Units are specified by the size_unit variable.
+resolution             (printer default)    Specifies the printer's resolution in ppi (pixels per inch).
+mode                   "screen"             Sets what resolution the printer will use, "screen": the screen's resolution (the default) or "high": the printer's maximum resolution
+====================== =================    ==============================================================================================================================================================
 
 Bugs and Limitations
 ====================
@@ -282,7 +282,6 @@ The following are known limitations:
 
 - There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
 - Only one popup window can exist at a time (if they're enabled at all).
--
 
 The following issues showed up with the port from QtWebKit to QtWebEngine:
 
