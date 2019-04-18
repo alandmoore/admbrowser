@@ -7,7 +7,7 @@
 start_url: "http://www.starfall.com"
 allow_plugins: True
 allow_popups: False
-whitelist: True
+whitelist: ['more.starfall.com', 'more2.starfall.com']
 
 bookmarks:
   "Starfall":

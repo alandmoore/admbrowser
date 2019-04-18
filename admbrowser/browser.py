@@ -26,7 +26,7 @@ from .admwebpage import AdmWebPage
 from .admnavbutton import AdmNavButton
 from .inactivity_filter import InactivityFilter
 from .defaults import CONFIG_OPTIONS
-
+from . import resources
 
 class MainWindow(qtw.QMainWindow):
 
@@ -71,19 +71,20 @@ class MainWindow(qtw.QMainWindow):
         if self.config.get("whitelist"):
             # we can just specify whitelist = True,
             # which should whitelist just the start_url and bookmark urls.
-            if type(self.config.get("whitelist")) is not list:
-                self.whitelist = []
-            self.whitelist.append(str(qtc.QUrl(
+            whitelist = self.config.get('whitelist')
+            if type(whitelist) is not list:
+                whitelist = []
+            whitelist.append(str(qtc.QUrl(
                 self.config.get("start_url")
             ).host()))
             bookmarks = self.config.get("bookmarks")
             if bookmarks:
-                self.whitelist += [
+                whitelist += [
                     str(qtc.QUrl(b.get("url")).host())
                     for k, b in bookmarks.items()
                 ]
-                self.whitelist = set(self.whitelist)  # uniquify and optimize
-            self.debug("Generated whitelist: " + str(self.whitelist))
+                self.config['whitelist'] = set(whitelist)  # uniquify and optimize
+            self.debug("Generated whitelist: " + str(whitelist))
 
         # create the web engine profile
         self.create_webprofile()
@@ -103,7 +104,7 @@ class MainWindow(qtw.QMainWindow):
         action = qtw.QAction(text, self)
         if icon is not None:
             action.setIcon(qtg.QIcon.fromTheme(
-                icon, qtg.QIcon(":/{}.png".format(icon))
+                icon, qtg.QIcon(":/navigation/{}.png".format(icon))
             ))
         if shortcut is not None and not shortcut.isEmpty():
             action.setShortcut(shortcut)
@@ -169,6 +170,7 @@ class MainWindow(qtw.QMainWindow):
         )
         self.browser_window.setObjectName("web_content")
         self.setCentralWidget(self.browser_window)
+        self.browser_window.error.connect(self.show_error)
 
         # Icon theme setting
         qtg.QIcon.setThemeName(self.config.get("icon_theme"))
@@ -234,6 +236,14 @@ class MainWindow(qtw.QMainWindow):
                     "Decrease the size of text and images on the page"
                 )
             }
+            # Set icons for browser actions from theme
+            for action_name in ('back', 'forward', 'refresh', 'stop'):
+                action = self.nav_items[action_name]
+                icon = qtg.QIcon.fromTheme(
+                    action_name,
+                    qtg.QIcon(":/navigation/{}.png".format(action_name))
+                )
+                action.setIcon(icon)
             if self.config.get("allow_printing"):
                 self.nav_items["print"] = self.createAction(
                     "Print",
@@ -381,6 +391,10 @@ class MainWindow(qtw.QMainWindow):
         else:
             self.nav_items["zoom_out"].setEnabled(False)
 
+
+    def show_error(self, string):
+        qtw.QMessageBox.critical(self, "Error", string)
+        self.debug("Error shown: {}".format(string))
 
 # ## END Main Application Window Class def ## #
 

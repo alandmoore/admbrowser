@@ -1,0 +1,11 @@
+<!DOCTYPE RCC><RCC version="1.0">
+<qresource prefix='navigation'>
+  <file alias="forward.png">go-next.png</file>
+  <file alias="back.png">go-previous.png</file>
+  <file alias="refresh.png">view-refresh.png</file>
+  <file alias="stop.png">process-stop.png</file>
+  <file>zoom-in.png</file>
+  <file>zoom-out.png</file>
+  <file>document-print.png</file>
+</qresource>
+</RCC>

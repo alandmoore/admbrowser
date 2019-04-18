@@ -67,5 +67,8 @@ class AdmWebPage(QWebEnginePage):
                     start_url=self.config.get("start_url")
                 ))
 
+    def renderProcessTerminated(self, *args):
+        self.debug("RenderProcessTerminated: {}".format(args))
+        super().renderProcessTerminated(args)
 
 # ### END ADMWEBPAGE DEFINITION ### #

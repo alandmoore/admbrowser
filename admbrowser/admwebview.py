@@ -24,6 +24,7 @@ class AdmWebView(qtwe.QWebEngineView):
     """
 
     downloads = []
+    error = qtc.pyqtSignal(str)
 
     def __init__(self, config, parent=None, debug=None, **kwargs):
         """Constructor for the AdmWebView
@@ -191,16 +192,19 @@ class AdmWebView(qtwe.QWebEngineView):
                 "Download request ignored for {} (not allowed)".format(dl_url)
             )
             download_item.cancel()
+            self.error.emit(
+                'Unable to download file: downloads have been disabled.'
+            )
         elif not self.config.get("content_handlers").get(dl_mime):
-            self.setHtml(msg.UNKNOWN_CONTENT_TYPE.format(
-                mime_type=dl_mime,
-                file_name=dl_path,
-                url=dl_url
-            ))
             self.debug(
-                'Download request ignored for mime type {} (no handler)'.format(dl_mime)
+                'Download request ignored for mime type {} (no handler)'
+                .format(dl_mime)
             )
             download_item.cancel()
+            self.error.emit(
+                'Unable to download file: no valid handler for "{}"'
+                .format(dl_mime)
+                )
         else:
             self.downloads.append(download_item)
             self.debug(
@@ -225,13 +229,22 @@ class AdmWebView(qtwe.QWebEngineView):
         """
 
         finished = [x for x in self.downloads if x.isFinished]
-        self.debug('display downloaded content for downloads: {}'.format(finished))
+        self.debug(
+            'display downloaded content for downloads: {}'
+            .format(finished)
+            )
         for dl in finished:
             self.downloads.remove(dl)
             mime = dl.mimeType()
             path = dl.path()
             handler = self.config.get('content_handlers').get(mime)
-            subprocess.Popen([handler, path])
+            try:
+                subprocess.Popen([handler, path])
+            except subprocess.CalledProcessError as e:
+                self.error.emit(
+                    'Error launching process "{}": {}'
+                    .format(handler, e)
+                )
 
             # Sometimes downloading files opens an empty window.
             # So if the current window has no URL, close it.
@@ -265,11 +278,16 @@ class AdmWebView(qtwe.QWebEngineView):
                 if re.match(pattern, url.host()):
                     site_ok = True
                 if not site_ok:
+                    self.setHtml('')
+                    self.back()
                     self.debug("Site violates whitelist: {}, {}".format(
                         url.host(), url.toString())
                     )
-                    self.setHtml(self.config.get("page_unavailable_html")
-                                 .format(**self.config))
+                    self.error.emit(
+                        self.config.get("page_unavailable_html")
+                        .format(**self.config)
+                    )
+
             if not url.isValid():
                 self.debug("Invalid URL {}".format(url.toString()))
             else:

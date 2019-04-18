@@ -1,0 +1,1 @@
+Images taken from Gnome HighContrast theme.
