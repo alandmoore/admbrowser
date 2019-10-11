@@ -25,7 +25,7 @@ from .admwebview import AdmWebView
 from .admwebpage import AdmWebPage
 from .admnavbutton import AdmNavButton
 from .inactivity_filter import InactivityFilter
-from .defaults import CONFIG_OPTIONS
+from .config import Config
 from . import resources
 
 class MainWindow(qtw.QMainWindow):
@@ -49,38 +49,35 @@ class MainWindow(qtw.QMainWindow):
         self.popup = None
 
         # Stylesheet support
-        stylesheet_path = self.config.get('stylesheet')
-        if stylesheet_path:
+        if self.config.stylesheet:
             try:
-                with open(stylesheet_path) as handle:
+                with open(self.config.stylesheet) as handle:
                     self.setStyleSheet(handle.read())
             except IOError as e:
                 self.debug(
-                    f'Problem loading stylesheet file "{stylesheet_path}": {e} '
+                    f'Problem loading stylesheet file "{self.config.stylesheet}": {e} '
                     '\nusing default style.'
                 )
         self.setObjectName("global")
 
         # Set proxy server environment variable before creating web views
-        if self.config.get("proxy_server"):
-            os.environ["http_proxy"] = self.config.get("proxy_server")
-            os.environ["https_proxy"] = self.config.get("proxy_server")
+        if self.config.proxy_server:
+            os.environ["http_proxy"] = self.config.proxy_server
+            os.environ["https_proxy"] = self.config.proxy_server
 
         # If the whitelist is activated, add the bookmarks and start_url
-        if self.config.get("whitelist"):
+        if self.config.whitelist:
             # we can just specify whitelist = True,
             # which should whitelist just the start_url and bookmark urls.
-            whitelist = self.config.get('whitelist')
+            whitelist = self.config.whitelist
             if not isinstance(whitelist, list):
                 whitelist = []
-            whitelist.append(qtc.QUrl(self.config.get("start_url")).host())
-            bookmarks = self.config.get("bookmarks")
-            if bookmarks:
-                whitelist += [
-                    qtc.QUrl(b.get("url")).host()
-                    for k, b in bookmarks.items()
-                ]
-                self.config['whitelist'] = set(whitelist)  # uniquify and optimize
+            start_host = qtc.QUrl(self.config.start_url).host()
+            whitelist.append(start_host)
+            for bookmark in self.config.bookmarks.values():
+                bookmark_host = qtc.QUrl(bookmark.get("url")).host()
+                whitelist.append(bookmark_host)
+                self.config.whitelist = set(whitelist)  # uniquify and optimize
             self.debug(f"Generated whitelist: {whitelist}")
 
         # create the web engine profile
@@ -121,14 +118,14 @@ class MainWindow(qtw.QMainWindow):
         # create private/nonprivate webprofile per settings
         webprofile = (
             qtwe.QWebEngineProfile()
-            if self.config.get('privacy_mode')
+            if self.config.privacy_mode
             else qtwe.QWebEngineProfile.defaultProfile()
         )
         self.debug(f"Browser session is private: {webprofile.isOffTheRecord()}")
 
         # set the user agent string
-        if self.config.get('user_agent'):
-            webprofile.setHttpUserAgent(self.config['user_agent'])
+        if self.config.user_agent:
+            webprofile.setHttpUserAgent(self.config.user_agent)
 
         # use webprofile
         self.webprofile = webprofile
@@ -141,10 +138,10 @@ class MainWindow(qtw.QMainWindow):
         """
 
         self.debug("build_ui")
-        inactivity_timeout = self.config.get("timeout")
+        inactivity_timeout = self.config.timeout
         quit_button_tooltip = (
             msg.QUIT_TOOLTIP
-            if self.config.get('quit_button_mode') == 'close'
+            if self.config.quit_button_mode == 'close'
             else msg.RESET_TOOLTIP
         )
         qb_mode_callbacks = {
@@ -169,15 +166,14 @@ class MainWindow(qtw.QMainWindow):
         self.browser_window.error.connect(self.show_error)
 
         # Icon theme setting
-        qtg.QIcon.setThemeName(self.config.get("icon_theme"))
+        qtg.QIcon.setThemeName(self.config.icon_theme)
 
         self.setCentralWidget(self.browser_window)
-        start_url = self.config.get("start_url")
-        self.debug(f"loading {start_url}")
-        self.browser_window.setUrl(qtc.QUrl(start_url))
+        self.debug(f"loading {self.config.start_url}")
+        self.browser_window.setUrl(qtc.QUrl(self.config.start_url))
 
         # Window size settings
-        window_size = self.config.get("window_size", '').lower()
+        window_size = self.config.window_size.lower()
         if window_size == 'full':
             self.showFullScreen()
         elif window_size == 'max':
@@ -188,10 +184,10 @@ class MainWindow(qtw.QMainWindow):
                 width, height = size.groups()
                 self.setFixedSize(int(width), int(height))
             else:
-                self.debug(f'Ignoring invalid window size "{window_size}"')
+                self.debug(f'Ignoring invalid window size "{self.config.window_size}"')
 
         # Set up the top navigation bar if it's configured to exist
-        if self.config.get("navigation"):
+        if self.config.navigation:
             self.navigation_bar = qtw.QToolBar(
                 "Navigation",
                 objectName="navigation",
@@ -207,9 +203,9 @@ class MainWindow(qtw.QMainWindow):
                 "refresh": self.browser_window.pageAction(AdmWebPage.Reload),
                 "stop": self.browser_window.pageAction(AdmWebPage.Stop),
                 "quit": self.createAction(
-                    self.config.get("quit_button_text"),
+                    self.config.quit_button_text,
                     qb_mode_callbacks.get(
-                        self.config.get("quit_button_mode"),
+                        self.config.quit_button_mode,
                         self.reset_browser
                     ),
                     qtg.QKeySequence("Alt+F"),
@@ -239,7 +235,7 @@ class MainWindow(qtw.QMainWindow):
                     qtg.QIcon(f":/navigation/{action_name}.png")
                 )
                 action.setIcon(icon)
-            if self.config.get("allow_printing"):
+            if self.config.allow_printing:
                 self.nav_items["print"] = self.createAction(
                     "Print",
                     self.browser_window.print_webpage,
@@ -249,7 +245,7 @@ class MainWindow(qtw.QMainWindow):
                 )
 
             # Add all the actions to the navigation bar.
-            for item in self.config.get("navigation_layout"):
+            for item in self.config.navigation_layout:
                 if item == "separator":
                     self.navigation_bar.addSeparator()
                 elif item == "spacer":
@@ -263,7 +259,7 @@ class MainWindow(qtw.QMainWindow):
                 elif item == "bookmarks":
                     # Insert bookmarks buttons here.
                     self.bookmark_buttons = []
-                    for bookmark in self.config.get("bookmarks", {}).items():
+                    for bookmark in self.config.bookmarks.items():
                         self.debug(f"Bookmark:\n {bookmark}")
                         # bookmark name will use the "name" attribute,
                         # if present, or else just the key:
@@ -310,7 +306,7 @@ class MainWindow(qtw.QMainWindow):
             self.browser_window.page().installEventFilter(self.event_filter)
             self.event_filter.timeout.connect(
                 to_mode_callbacks.get(
-                    self.config.get("timeout_mode"),
+                    self.config.timeout_mode,
                     self.reset_browser)
             )
         else:
@@ -329,10 +325,10 @@ class MainWindow(qtw.QMainWindow):
         self.screensaver_active = True
         if self.popup:
             self.popup.close()
-        if self.config.get("navigation"):
+        if self.config.navigation:
             self.navigation_bar.hide()
-        self.browser_window.setZoomFactor(self.config.get("zoom_factor"))
-        self.browser_window.load(qtc.QUrl(self.config.get("screensaver_url")))
+        self.browser_window.setZoomFactor(self.config.zoom_factor)
+        self.browser_window.load(qtc.QUrl(self.config.screensaver_url))
         self.event_filter.timeout.disconnect()
         self.event_filter.activity.connect(self.reset_browser)
 
@@ -456,55 +452,9 @@ class ADMBrowserApp(qtw.QApplication):
           2. Config file
           3. Defaults
         """
-        self.config = {}
         # convert self.args to a dict
-        options = vars(self.args)
-
-        # For each option in the CONFIG_OPTIONS dict,
-        # determine the ultimate value by coalescing
-        # the switches, config file value, environment, and defaults
-
-        for key, metadata in CONFIG_OPTIONS.items():
-            options_val = options.get(key)
-            file_val = file_config.get(key)
-            env_val = os.environ.get(metadata.get("env", ''))
-
-            default_val = metadata.get("default")
-            vals = metadata.get("values")
-            self.debug(
-                f"key: {key}, default: {default_val}, "
-                f"file: {file_val}, options: {options_val}"
-            )
-            if vals:
-                options_val = options_val if options_val in vals else None
-                file_val = file_val if file_val in vals else None
-                env_val = env_val if env_val in vals else None
-            if metadata.get("is_file"):
-                filename = options_val or env_val
-                if not filename:
-                    self.config[key] = default_val
-                else:
-                    try:
-                        with open(filename, 'r') as handle:
-                            self.config[key] = handle.read()
-                    except IOError:
-                        self.debug(
-                            f"Could not open file '{filename}' for reading."
-                        )
-                        self.config[key] = default_val
-            else:
-                set_values = [
-                    val for val in (options_val, env_val, file_val)
-                    if val is not None
-                ]
-                if len(set_values) > 0:
-                    self.config[key] = set_values[0]
-                else:
-                    self.config[key] = default_val
-            if metadata.get("type") and self.config[key]:
-                self.debug(f"{key} cast to {metadata.get('type')}")
-                self.config[key] = metadata.get("type")(self.config[key])
-        self.debug(repr(self.config))
+        args_dict = vars(self.args)
+        self.config = Config(file_config, args_dict, debug=self.debug)
 
     def _configure_argparse(self):
         # Parse the command line arguments
@@ -526,23 +476,23 @@ class ADMBrowserApp(qtw.QApplication):
         )
 
         # add config switches
-        for key, meta in CONFIG_OPTIONS.items():
-            if meta.get("switches"):
+        for key, meta in Config.option_definitions.items():
+            if meta.switches:
                 # not all actions are valid with the same keyword
-                action = meta.get("action", "store")
+                action = meta.action
                 kwargs = {}
                 if action == "store":
-                    kwargs["type"] = meta.get("type")
-                    kwargs["choices"] = meta.get("values")
+                    kwargs["type"] = meta.datatype
+                    kwargs["choices"] = meta.values
 
                 parser.add_argument(
-                    *(meta["switches"]),
-                    action=meta.get("action", "store"),
+                    *(meta.switches),
+                    action=meta.action,
                     # no need for a default in argparse
                     # since we have a default option
                     default=argparse.SUPPRESS,
                     dest=key,
-                    help=meta.get("help"),
+                    help=meta.help,
                     **kwargs
                 )
 

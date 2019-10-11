@@ -34,15 +34,15 @@ class AdmWebPage(QWebEnginePage):
         Overridden from QWebEnginePage so that we can (if configured)
         force yes/no on these dialogs.
         """
-        if self.config.get('force_js_confirm') == "accept":
+        if self.config.force_js_confirm == "accept":
             return True
-        elif self.config.get('force_js_confirm') == "deny":
+        elif self.config.force_js_confirm == "deny":
             return False
         else:
             return super().javaScriptConfirm(self, frame, msg)
 
     def javaScriptAlert(self, frame, msg):
-        if not self.config.get('suppress_alerts'):
+        if not self.config.suppress_alerts:
             return super().javaScriptAlert(self, frame, msg)
 
     def certificateError(self, error):
@@ -54,7 +54,7 @@ class AdmWebPage(QWebEnginePage):
         Doesn't seem to get called in Qt 5.4
         """
         self.debug("certificate error")
-        if self.config.get("ssl_mode") == 'ignore':
+        if self.config.ssl_mode == 'ignore':
             self.debug("Certificate error ignored")
             self.debug(error.errorDescription())
             return True
@@ -62,7 +62,7 @@ class AdmWebPage(QWebEnginePage):
             self.setHtml(
                 msg.CERTIFICATE_ERROR.format(
                     url=error.url().toString(),
-                    start_url=self.config.get("start_url")
+                    start_url=self.config.start_url
                 ))
 
     def renderProcessTerminated(self, *args):
