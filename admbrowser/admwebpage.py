@@ -18,7 +18,7 @@ class AdmWebPage(QWebEnginePage):
             super().__init__(parent)
         else:
             super().__init__(profile, parent)
-        debug("Profile is: {}".format(self.profile()))
+        debug(f"Profile is: {self.profile()}")
 
     def javaScriptConsoleMessage(self, level, message, line, sourceid):
         """Handle console.log messages from javascript.
@@ -26,9 +26,7 @@ class AdmWebPage(QWebEnginePage):
         Overridden from QWebEnginePage so that we can
         send javascript errors to debug.
         """
-        self.debug('Javascript Error in "{}" line {}: {}'.format(
-            sourceid, line, message)
-        )
+        self.debug(f'Javascript Error in "{sourceid}" line {line}: {message}')
 
     def javaScriptConfirm(self, frame, msg):
         """Handle javascript confirm() dialogs.

@@ -49,16 +49,15 @@ class MainWindow(qtw.QMainWindow):
         self.popup = None
 
         # Stylesheet support
-        if self.config.get("stylesheet"):
+        stylesheet_path = self.config.get('stylesheet')
+        if stylesheet_path:
             try:
-                with open(self.config.get("stylesheet")) as ss:
-                    self.setStyleSheet(ss.read())
-            except Exception as e:
+                with open(stylesheet_path) as handle:
+                    self.setStyleSheet(handle.read())
+            except IOError as e:
                 self.debug(
-                    (
-                        'Problem loading stylesheet file "{}": {} '
-                        '\nusing default style.'
-                    ).format(self.config.get("stylesheet"), e)
+                    f'Problem loading stylesheet file "{stylesheet_path}": {e} '
+                    '\nusing default style.'
                 )
         self.setObjectName("global")
 
@@ -72,7 +71,7 @@ class MainWindow(qtw.QMainWindow):
             # we can just specify whitelist = True,
             # which should whitelist just the start_url and bookmark urls.
             whitelist = self.config.get('whitelist')
-            if type(whitelist) is not list:
+            if not isinstance(whitelist, list):
                 whitelist = []
             whitelist.append(str(qtc.QUrl(
                 self.config.get("start_url")
@@ -80,11 +79,11 @@ class MainWindow(qtw.QMainWindow):
             bookmarks = self.config.get("bookmarks")
             if bookmarks:
                 whitelist += [
-                    str(qtc.QUrl(b.get("url")).host())
+                    qtc.QUrl(b.get("url")).host()
                     for k, b in bookmarks.items()
                 ]
                 self.config['whitelist'] = set(whitelist)  # uniquify and optimize
-            self.debug("Generated whitelist: " + str(whitelist))
+            self.debug(f"Generated whitelist: {whitelist}")
 
         # create the web engine profile
         self.create_webprofile()
@@ -104,11 +103,11 @@ class MainWindow(qtw.QMainWindow):
         action = qtw.QAction(text, self)
         if icon is not None:
             action.setIcon(qtg.QIcon.fromTheme(
-                icon, qtg.QIcon(":/navigation/{}.png".format(icon))
+                icon, qtg.QIcon(f":/navigation/{icon}.png")
             ))
         if shortcut is not None and not shortcut.isEmpty():
             action.setShortcut(shortcut)
-            tip += " ({})".format(shortcut.toString())
+            tip += f" ({shortcut.toString()})"
         if tip is not None:
             action.setToolTip(tip)
             action.setStatusTip(tip)
@@ -127,8 +126,7 @@ class MainWindow(qtw.QMainWindow):
             if self.config.get('privacy_mode')
             else qtwe.QWebEngineProfile.defaultProfile()
         )
-        self.debug("Browser session is private: {}"
-                   .format(webprofile.isOffTheRecord()))
+        self.debug(f"Browser session is private: {webprofile.isOffTheRecord()}")
 
         # set the user agent string
         if self.config.get('user_agent'):
@@ -176,8 +174,9 @@ class MainWindow(qtw.QMainWindow):
         qtg.QIcon.setThemeName(self.config.get("icon_theme"))
 
         self.setCentralWidget(self.browser_window)
-        self.debug("loading {}".format(self.config.get("start_url")))
-        self.browser_window.setUrl(qtc.QUrl(self.config.get("start_url")))
+        start_url = self.config.get("start_url")
+        self.debug(f"loading {start_url}")
+        self.browser_window.setUrl(qtc.QUrl(start_url))
 
         # Window size settings
         window_size = self.config.get("window_size", '').lower()
@@ -191,9 +190,7 @@ class MainWindow(qtw.QMainWindow):
                 width, height = size.groups()
                 self.setFixedSize(int(width), int(height))
             else:
-                self.debug('Ignoring invalid window size "{}"'.format(
-                    window_size
-                ))
+                self.debug(f'Ignoring invalid window size "{window_size}"')
 
         # Set up the top navigation bar if it's configured to exist
         if self.config.get("navigation"):
@@ -241,7 +238,7 @@ class MainWindow(qtw.QMainWindow):
                 action = self.nav_items[action_name]
                 icon = qtg.QIcon.fromTheme(
                     action_name,
-                    qtg.QIcon(":/navigation/{}.png".format(action_name))
+                    qtg.QIcon(f":/navigation/{action_name}.png")
                 )
                 action.setIcon(icon)
             if self.config.get("allow_printing"):
@@ -269,7 +266,7 @@ class MainWindow(qtw.QMainWindow):
                     # Insert bookmarks buttons here.
                     self.bookmark_buttons = []
                     for bookmark in self.config.get("bookmarks", {}).items():
-                        self.debug("Bookmark:\n" + bookmark.__str__())
+                        self.debug(f"Bookmark:\n {bookmark}")
                         # bookmark name will use the "name" attribute,
                         # if present, or else just the key:
                         bookmark_name = bookmark[1].get("name") or bookmark[0]
@@ -392,9 +389,9 @@ class MainWindow(qtw.QMainWindow):
             self.nav_items["zoom_out"].setEnabled(False)
 
 
-    def show_error(self, string):
-        qtw.QMessageBox.critical(self, "Error", string)
-        self.debug("Error shown: {}".format(string))
+    def show_error(self, error):
+        qtw.QMessageBox.critical(self, "Error", error)
+        self.debug(f"Error shown: {error}")
 
 # ## END Main Application Window Class def ## #
 
@@ -423,17 +420,15 @@ class ADMBrowserApp(qtw.QApplication):
         # figure out configuration
         self.args = self._configure_argparse()
         configfile = getattr(self.args, "config_file", default_config_file)
-        configfile_data = (
-            yaml.safe_load(open(configfile, 'r'))
-            if configfile
-            else {}
-        )
+        if configfile:
+            with open(configfile, 'r') as handle:
+                configfile_data = yaml.safe_load(handle)
+        else:
+            configfile_data = {}
         self.parse_config(configfile_data)
 
         # Note: can't call "debug" unti self.args exists
-        self.debug(
-            "loading configuration from '{}'".format(configfile)
-        )
+        self.debug(f"loading configuration from '{configfile}'")
 
         # Create main window
         self.mainwin = MainWindow(self.config, debug=self.debug)
@@ -444,20 +439,16 @@ class ADMBrowserApp(qtw.QApplication):
         if not (self.args.debug or self.args.debug_log):
             pass
         else:
-            message = message.__str__()
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            debug_message = "{}:: {}".format(timestamp, message)
+            debug_message = f"{timestamp}:: {message}"
             if self.args.debug:
                 print(debug_message)
             if self.args.debug_log:
                 try:
                     with open(self.args.debug_log, 'a') as file_handle:
                         file_handle.write(debug_message + "\n")
-                except Exception as e:
-                    print(
-                        "unable to write to log file {}:  {}"
-                        .format(self.args.debug_log, e)
-                    )
+                except IOError as e:
+                    print(f"unable to write log '{self.args.debug_log}':  {e}")
 
     def parse_config(self, file_config):
         """Compile the running config into self.config
@@ -482,9 +473,10 @@ class ADMBrowserApp(qtw.QApplication):
 
             default_val = metadata.get("default")
             vals = metadata.get("values")
-            self.debug("key: {}, default: {}, file: {}, options: {}".format(
-                key, default_val, file_val, options_val
-            ))
+            self.debug(
+                f"key: {key}, default: {default_val}, "
+                f"file: {file_val}, options: {options_val}"
+            )
             if vals:
                 options_val = options_val if options_val in vals else None
                 file_val = file_val if file_val in vals else None
@@ -495,13 +487,12 @@ class ADMBrowserApp(qtw.QApplication):
                     self.config[key] = default_val
                 else:
                     try:
-                        with open(filename, 'r') as fh:
-                            self.config[key] = fh.read()
+                        with open(filename, 'r') as handle:
+                            self.config[key] = handle.read()
                     except IOError:
                         self.debug(
-                            "Could not open file {} for reading.".format(
-                                filename
-                            ))
+                            f"Could not open file '{filename}' for reading."
+                        )
                         self.config[key] = default_val
             else:
                 set_values = [
@@ -513,7 +504,7 @@ class ADMBrowserApp(qtw.QApplication):
                 else:
                     self.config[key] = default_val
             if metadata.get("type") and self.config[key]:
-                self.debug("{} cast to {}".format(key, metadata.get("type")))
+                self.debug(f"{key} cast to {metadata.get('type')}")
                 self.config[key] = metadata.get("type")(self.config[key])
         self.debug(repr(self.config))
 

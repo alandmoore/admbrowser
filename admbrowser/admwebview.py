@@ -53,8 +53,9 @@ class AdmWebView(qtwe.QWebEngineView):
             debug=self.debug
         )
         self.setPage(self._page)
-        debug("Page profile in use is: {}".format(self.page().profile()))
-        debug("IS OTR: {}".format(self.page().profile().isOffTheRecord()))
+        debug(f"Page profile in use is: {self.page().profile()}")
+        debug(f"IS OTR: {self.page().profile().isOffTheRecord()}")
+
         ##################
         # Configurations #
         ##################
@@ -111,14 +112,14 @@ class AdmWebView(qtwe.QWebEngineView):
             "settings configured"
         )
 
-    def createWindow(self, type):
+    def createWindow(self, wintype):
         """Handle requests for a new browser window.
 
         Method called whenever the browser requests a new window
         (e.g., <a target='_blank'> or window.open()).
         Overridden from QWebEngineView to allow for popup windows, if enabled.
         """
-        self.debug("Popup Requested with argument: {}".format(type))
+        self.debug(f"Popup Requested with argument: {wintype}")
         if self.config.get("allow_popups"):
             self.debug(self.kwargs)
             # we need to create a widget to contain the webview
@@ -142,7 +143,7 @@ class AdmWebView(qtwe.QWebEngineView):
             self.popup.show()
             return webview
         else:
-            self.debug("Popup not loaded on {}".format(self.url().toString()))
+            self.debug(f"Popup not loaded on {self.url().toString()}")
 
     def contextMenuEvent(self, event):
         """Handle requests for a context menu in the browser.
@@ -171,7 +172,7 @@ class AdmWebView(qtwe.QWebEngineView):
         It might be nice to actually have a dialog here,
         but for now we just use the default credentials from the config file.
         """
-        self.debug("Auth required on {}".format(requestUrl.toString()))
+        self.debug(f"Auth required on {requestUrl.toString()}")
         default_user = self.config.get("default_user")
         default_password = self.config.get("default_password")
         if (default_user):
@@ -189,7 +190,7 @@ class AdmWebView(qtwe.QWebEngineView):
         dl_path = download_item.path()
         if not self.config.get('allow_external_content'):
             self.debug(
-                "Download request ignored for {} (not allowed)".format(dl_url)
+                f"Download request ignored for {dl_url} (not allowed)"
             )
             download_item.cancel()
             self.error.emit(
@@ -197,21 +198,15 @@ class AdmWebView(qtwe.QWebEngineView):
             )
         elif not self.config.get("content_handlers").get(dl_mime):
             self.debug(
-                'Download request ignored for mime type {} (no handler)'
-                .format(dl_mime)
+                f'Download request ignored for mime type {dl_mime} (no handler)'
             )
             download_item.cancel()
             self.error.emit(
-                'Unable to download file: no valid handler for "{}"'
-                .format(dl_mime)
-                )
+                f'Unable to download file: no valid handler for "{dl_mime}"'
+            )
         else:
             self.downloads.append(download_item)
-            self.debug(
-                "Starting download of url {} of type {}".format(
-                    dl_url,
-                    dl_mime
-                ))
+            self.debug(f"Starting download of url {dl_url} of type {dl_mime}")
             if str(self.url().toString()) in ('', 'about:blank'):
                 self.setHtml(msg.DOWNLOADING_MESSAGE.format(
                     filename=dl_path,
@@ -230,9 +225,8 @@ class AdmWebView(qtwe.QWebEngineView):
 
         finished = [x for x in self.downloads if x.isFinished]
         self.debug(
-            'display downloaded content for downloads: {}'
-            .format(finished)
-            )
+            f'display downloaded content for downloads: {finished}'
+        )
         for dl in finished:
             self.downloads.remove(dl)
             mime = dl.mimeType()
@@ -242,8 +236,7 @@ class AdmWebView(qtwe.QWebEngineView):
                 subprocess.Popen([handler, path])
             except subprocess.CalledProcessError as e:
                 self.error.emit(
-                    'Error launching process "{}": {}'
-                    .format(handler, e)
+                    f'Error launching process "{handler}": {e}'
                 )
 
             # Sometimes downloading files opens an empty window.
@@ -258,7 +251,7 @@ class AdmWebView(qtwe.QWebEngineView):
         Called whenever the browser navigates to a URL;
         handles the whitelisting logic and does some debug logging.
         """
-        self.debug("Request URL: {}".format(url.toString()))
+        self.debug(f"Request URL: {url.toString()}")
         if not url.isEmpty():
             # If whitelisting is enabled, and this isn't the start_url host,
             # check the url to see if the host's domain matches.
@@ -274,24 +267,22 @@ class AdmWebView(qtwe.QWebEngineView):
                      for w
                      in self.config.get("whitelist")]
                 ) + ")$"))
-                self.debug("Whitelist pattern: {}".format(pattern.pattern))
+                self.debug(f"Whitelist pattern: {pattern.pattern}")
                 if re.match(pattern, url.host()):
                     site_ok = True
                 if not site_ok:
                     self.setHtml('')
                     self.back()
-                    self.debug("Site violates whitelist: {}, {}".format(
-                        url.host(), url.toString())
-                    )
+                    self.debug(f"Site violates whitelist: {url.host()}, {url.toString()}")
                     self.error.emit(
                         self.config.get("page_unavailable_html")
                         .format(**self.config)
                     )
 
             if not url.isValid():
-                self.debug("Invalid URL {}".format(url.toString()))
+                self.debug(f"Invalid URL {url.toString()}")
             else:
-                self.debug("Load URL {}".format(url.toString()))
+                self.debug(f"Load URL {url.toString()}")
 
     def onLoadFinished(self, ok):
         """Handle loadFinished events.
@@ -308,7 +299,7 @@ class AdmWebView(qtwe.QWebEngineView):
         and to make things worse, QtWebEngine has no facility for inspecting
         the errors that lead to a false 'OK'.
         """
-        print("LoadOK reported: {}".format(ok))
+        print(f"LoadOK reported: {ok}")
         return True
 
         # This is the code that should run.
@@ -330,8 +321,7 @@ class AdmWebView(qtwe.QWebEngineView):
                 )
             else:
                 self.debug(
-                    "load failed on URL: {}" .format(
-                        self.page().requestedUrl().toString())
+                    f"load failed on URL: {self.page().requestedUrl().toString()}"
                 )
                 self.setHtml(
                     self.config.get("page_unavailable_html")
@@ -359,10 +349,9 @@ class AdmWebView(qtwe.QWebEngineView):
                     )
                 except NameError:
                     self.debug(
-                        "Specified print size unit '{}' not found,"
-                        "using default.".format(
-                            self.print_settings.get("size_unit")
-                        ))
+                        f"Specified print size unit '{self.print_settings.get('size_unit')}'"
+                        " not found, using default."
+                    )
                     unit = qtp.QPrinter.Millimeter
             else:
                 unit = qtp.QPrinter.Millimeter
