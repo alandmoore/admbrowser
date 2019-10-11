@@ -73,9 +73,7 @@ class MainWindow(qtw.QMainWindow):
             whitelist = self.config.get('whitelist')
             if not isinstance(whitelist, list):
                 whitelist = []
-            whitelist.append(str(qtc.QUrl(
-                self.config.get("start_url")
-            ).host()))
+            whitelist.append(qtc.QUrl(self.config.get("start_url")).host())
             bookmarks = self.config.get("bookmarks")
             if bookmarks:
                 whitelist += [

@@ -207,7 +207,7 @@ class AdmWebView(qtwe.QWebEngineView):
         else:
             self.downloads.append(download_item)
             self.debug(f"Starting download of url {dl_url} of type {dl_mime}")
-            if str(self.url().toString()) in ('', 'about:blank'):
+            if self.url().toString() in ('', 'about:blank'):
                 self.setHtml(msg.DOWNLOADING_MESSAGE.format(
                     filename=dl_path,
                     mime_type=dl_mime,
@@ -241,7 +241,7 @@ class AdmWebView(qtwe.QWebEngineView):
 
             # Sometimes downloading files opens an empty window.
             # So if the current window has no URL, close it.
-            if(str(self.url().toString()) in ('', 'about:blank')):
+            if self.url().toString() in ('', 'about:blank'):
                 self.close()
 
     def onLinkClick(self, url):
@@ -259,7 +259,7 @@ class AdmWebView(qtwe.QWebEngineView):
             if all([
                     self.config.get("whitelist"),
                     url.host() != start_url_host,
-                    str(url.toString()) != 'about:blank'
+                    url.toString() != 'about:blank'
             ]):
                 site_ok = False
                 pattern = re.compile(str(r"(^|.*\.)(" + "|".join(
@@ -306,9 +306,9 @@ class AdmWebView(qtwe.QWebEngineView):
         if not ok:
             start_url = self.config.get('start_url')
             start_host = qtc.QUrl(start_url).host()
-            start_path = str(qtc.QUrl(start_url).path()).rstrip('/')
+            start_path = qtc.QUrl(start_url).path().rstrip('/')
             failed_host = self.url().host()
-            failed_path = str(self.url().path()).rstrip('/')
+            failed_path = self.url().path().rstrip('/')
             if all([
                     failed_host == start_host,
                     failed_path == start_path
