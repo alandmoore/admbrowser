@@ -64,10 +64,10 @@ class AdmWebView(qtwe.QWebEngineView):
         self._configureSettings(config)
 
         # zoom factor
-        self.setZoomFactor(config.get("zoom_factor"))
+        self.setZoomFactor(config.zoom_factor)
 
         # add printing to context menu if it's allowed
-        if config.get("allow_printing"):
+        if config.allow_printing:
             self.print_action = qtw.QAction("Print", self)
             self.print_action.setIcon(qtg.QIcon.fromTheme("document-print"))
             self.print_action.triggered.connect(self.print_webpage)
@@ -96,7 +96,7 @@ class AdmWebView(qtwe.QWebEngineView):
         # Popup settings
         settings().setAttribute(
             qtwe.QWebEngineSettings.JavascriptCanOpenWindows,
-            config.get("allow_popups")
+            config.allow_popups
         )
         # local storage
         settings().setAttribute(
@@ -106,7 +106,7 @@ class AdmWebView(qtwe.QWebEngineView):
         # Plugins
         settings().setAttribute(
             qtwe.QWebEngineSettings.PluginsEnabled,
-            config.get("allow_plugins")
+            config.allow_plugins
         )
         self.debug(
             "settings configured"
@@ -120,7 +120,7 @@ class AdmWebView(qtwe.QWebEngineView):
         Overridden from QWebEngineView to allow for popup windows, if enabled.
         """
         self.debug(f"Popup Requested with argument: {wintype}")
-        if self.config.get("allow_popups"):
+        if self.config.allow_popups:
             self.debug(self.kwargs)
             # we need to create a widget to contain the webview
             # since QWebEngineView objects apparently don't work as top-levels?
@@ -161,7 +161,7 @@ class AdmWebView(qtwe.QWebEngineView):
             action = self.pageAction(action)
             if action.isEnabled():
                 menu.addAction(action)
-        if self.config.get("allow_printing"):
+        if self.config.allow_printing:
             menu.addAction(self.print_action)
         menu.exec_(event.globalPos())
 
@@ -173,8 +173,8 @@ class AdmWebView(qtwe.QWebEngineView):
         but for now we just use the default credentials from the config file.
         """
         self.debug(f"Auth required on {requestUrl.toString()}")
-        default_user = self.config.get("default_user")
-        default_password = self.config.get("default_password")
+        default_user = self.config.default_user
+        default_password = self.config.default_password
         if (default_user):
             authenticator.setUser(default_user)
         if (default_password):
@@ -188,7 +188,7 @@ class AdmWebView(qtwe.QWebEngineView):
         dl_url = download_item.url().toString()
         dl_mime = download_item.mimeType()
         dl_path = download_item.path()
-        if not self.config.get('allow_external_content'):
+        if not self.config.allow_external_content:
             self.debug(
                 f"Download request ignored for {dl_url} (not allowed)"
             )
@@ -196,7 +196,7 @@ class AdmWebView(qtwe.QWebEngineView):
             self.error.emit(
                 'Unable to download file: downloads have been disabled.'
             )
-        elif not self.config.get("content_handlers").get(dl_mime):
+        elif not self.config.content_handlers.get(dl_mime):
             self.debug(
                 f'Download request ignored for mime type {dl_mime} (no handler)'
             )
@@ -231,7 +231,7 @@ class AdmWebView(qtwe.QWebEngineView):
             self.downloads.remove(dl)
             mime = dl.mimeType()
             path = dl.path()
-            handler = self.config.get('content_handlers').get(mime)
+            handler = self.config.content_handlers.get(mime)
             try:
                 subprocess.Popen([handler, path])
             except subprocess.CalledProcessError as e:
@@ -255,9 +255,9 @@ class AdmWebView(qtwe.QWebEngineView):
         if not url.isEmpty():
             # If whitelisting is enabled, and this isn't the start_url host,
             # check the url to see if the host's domain matches.
-            start_url_host = qtc.QUrl(self.config.get("start_url")).host()
+            start_url_host = qtc.QUrl(self.config.start_url).host()
             if all([
-                    self.config.get("whitelist"),
+                    self.config.whitelist,
                     url.host() != start_url_host,
                     url.toString() != 'about:blank'
             ]):
@@ -265,7 +265,7 @@ class AdmWebView(qtwe.QWebEngineView):
                 pattern = re.compile(str(r"(^|.*\.)(" + "|".join(
                     [re.escape(w)
                      for w
-                     in self.config.get("whitelist")]
+                     in self.config.whitelist]
                 ) + ")$"))
                 self.debug(f"Whitelist pattern: {pattern.pattern}")
                 if re.match(pattern, url.host()):
@@ -275,8 +275,7 @@ class AdmWebView(qtwe.QWebEngineView):
                     self.back()
                     self.debug(f"Site violates whitelist: {url.host()}, {url.toString()}")
                     self.error.emit(
-                        self.config.get("page_unavailable_html")
-                        .format(**self.config)
+                        self.config.page_unavailable_html.format(**self.config)
                     )
 
             if not url.isValid():
@@ -304,7 +303,7 @@ class AdmWebView(qtwe.QWebEngineView):
 
         # This is the code that should run.
         if not ok:
-            start_url = self.config.get('start_url')
+            start_url = self.config.start_url
             start_host = qtc.QUrl(start_url).host()
             start_path = qtc.QUrl(start_url).path().rstrip('/')
             failed_host = self.url().host()
@@ -313,7 +312,7 @@ class AdmWebView(qtwe.QWebEngineView):
                     failed_host == start_host,
                     failed_path == start_path
             ]):
-                self.setHtml(self.config.get("network_down_html")
+                self.setHtml(self.config.network_down_html
                              .format(**self.config), qtc.QUrl())
                 self.debug(
                     "Start Url doesn't seem to be available;"
@@ -324,7 +323,7 @@ class AdmWebView(qtwe.QWebEngineView):
                     f"load failed on URL: {self.page().requestedUrl().toString()}"
                 )
                 self.setHtml(
-                    self.config.get("page_unavailable_html")
+                    self.config.page_unavailable_html
                     .format(**self.config), qtc.QUrl()
                 )
         return True
