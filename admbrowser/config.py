@@ -213,6 +213,3 @@ class Config:
             for key in self.option_definitions
         ])
         return f'ADMBrowser Configuration:\n\t{option_list}'
-
-    def get(self, key, default=None):
-        return getattr(self, key, default)
