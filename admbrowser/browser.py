@@ -396,6 +396,11 @@ class ADMBrowserApp(qtw.QApplication):
 
     def __init__(self, args):
         super().__init__(args)
+
+        #############################
+        # Process the Configuration #
+        #############################
+
         # locate the configuration file to use.
         confpaths = [
             '~/.admbrowser.yaml',
@@ -411,18 +416,26 @@ class ADMBrowserApp(qtw.QApplication):
         else:
             default_config_file = None
 
-        # figure out configuration
-        self.args = self._configure_argparse()
-        configfile = getattr(self.args, "config_file", default_config_file)
-        if configfile:
-            with open(configfile, 'r') as handle:
-                configfile_data = yaml.safe_load(handle)
-        else:
-            configfile_data = {}
-        self.parse_config(configfile_data)
+        # Get the argument configuration
+        args_dict = self._configure_argparse()
 
-        # Note: can't call "debug" unti self.args exists
-        self.debug(f"loading configuration from '{configfile}'")
+        # Open the configuration file
+        config_file = args_dict.get("config_file", default_config_file)
+        if config_file:
+            with open(config_file, 'r') as handle:
+                file_dict = yaml.safe_load(handle)
+        else:
+            file_dict = {}
+
+        # Create a configuration object
+        self.config = Config(file_dict, args_dict, debug=self.debug)
+
+        # Note: can't call "debug" until self.config exists
+        self.debug(f"loading configuration from '{config_file}'")
+
+        #########################
+        # Create the MainWindow #
+        #########################
 
         # Create main window
         self.mainwin = MainWindow(self.config, debug=self.debug)
@@ -430,49 +443,34 @@ class ADMBrowserApp(qtw.QApplication):
 
     def debug(self, message):
         """Log or print a message if the global DEBUG is true."""
-        if not (self.args.debug or self.args.debug_log):
+        if not (self.config.debug or self.config.debug_log):
             pass
         else:
             timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             debug_message = f"{timestamp}:: {message}"
-            if self.args.debug:
+            if self.config.debug:
                 print(debug_message)
-            if self.args.debug_log:
+            if self.config.debug_log:
                 try:
-                    with open(self.args.debug_log, 'a') as file_handle:
-                        file_handle.write(debug_message + "\n")
+                    with open(self.config.debug_log, 'a') as handle:
+                        handle.write(debug_message + "\n")
                 except IOError as e:
-                    print(f"unable to write log '{self.args.debug_log}':  {e}")
-
-    def parse_config(self, file_config):
-        """Compile the running config into self.config
-
-        Order of precedence:
-          1. Switches
-          2. Config file
-          3. Defaults
-        """
-        # convert self.args to a dict
-        args_dict = vars(self.args)
-        self.config = Config(file_config, args_dict, debug=self.debug)
+                    print(f"unable to write log '{self.config.debug_log}':  {e}")
 
     def _configure_argparse(self):
-        # Parse the command line arguments
+        """Configure and process the command-line arguments.
+
+        Returns a dictionary of the arguments.
+        """
+
+        # Create Parser
         parser = argparse.ArgumentParser()
 
-        # add non-config switches
-        parser.add_argument(  # Config file
+        # add non-config switch for Configuration File
+        parser.add_argument(
             "-c", "--config-file", action="store", default=argparse.SUPPRESS,
             dest="config_file",
             help="Specifiy an alternate config file"
-        )
-        parser.add_argument(  # Debug
-            "-d", "--debug", action="store_true", default=False, dest="debug",
-            help="Enable debugging output to stdout"
-        )
-        parser.add_argument(  # Debug Log
-            "--debug_log", action="store", default=None, dest="debug_log",
-            help="Enable debug output to the specified filename"
         )
 
         # add config switches
@@ -500,7 +498,8 @@ class ADMBrowserApp(qtw.QApplication):
         # so that qt-specific args are removed.
         # we also need to remove argument 0.
         argv = [str(x) for x in list(self.arguments())][1:]
-        return parser.parse_args(argv)
+
+        return vars(parser.parse_args(argv))
 
 
 def main():
