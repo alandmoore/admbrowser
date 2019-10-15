@@ -48,6 +48,18 @@ class Config:
         "allow_printing": OptionDefinition(default=False, datatype=bool),
         "bookmarks": OptionDefinition(default={}, datatype=dict),
         "content_handlers": OptionDefinition(default={}, datatype=dict),
+        "debug": OptionDefinition(
+            switches=('-d', '--debug'),
+            default=False,
+            datatype=bool,
+            action='store_true',
+            help='Turn on debug output.'
+        ),
+        "debug_log": OptionDefinition(
+            switches=('--debug_log',),
+            default=None,
+            help="File path to write debug output to"
+        ),
         "default_password": OptionDefinition(
             default=None,
             switches=("-w", "--password"),
