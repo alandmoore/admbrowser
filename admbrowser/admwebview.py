@@ -203,6 +203,7 @@ class AdmWebView(qtwe.QWebEngineView):
             download_item.cancel()
             self.error.emit(
                 f'Unable to download file: no valid handler for "{dl_mime}"'
+                f'{self.config.content_handlers}'
             )
         else:
             self.downloads.append(download_item)
@@ -238,7 +239,14 @@ class AdmWebView(qtwe.QWebEngineView):
                 self.error.emit(
                     f'Error launching process "{handler}": {e}'
                 )
-
+            except FileNotFoundError as e:
+                self.error.emit(
+                    f'Cannot open: configured handler "{handler}" not found: {e}'
+                )
+            except Exception as e:
+                self.error.emit(
+                    f'Unknown error handling file: {e}'
+                )
             # Sometimes downloading files opens an empty window.
             # So if the current window has no URL, close it.
             if self.url().toString() in ('', 'about:blank'):

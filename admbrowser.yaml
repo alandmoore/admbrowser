@@ -271,3 +271,4 @@ bookmarks:
 content_handlers:
   "application/pdf": "okular"
   "application/vnd.oasis.opendocument.text": "libreoffice"
+  "application/zip": "test_test_application_that_doesnot_exist"
