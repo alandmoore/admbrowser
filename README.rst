@@ -12,18 +12,21 @@ Contributors:
 Description
 ===========
 
-ADMBrowser is a browser specifically for use on web kiosks.  It's based on pyqt and QWebEngine (Blink), and is designed to make lock-down very simple and painless.
+ADMBrowser is a browser specifically for use on web kiosks.  It's based on PyQt5 and QtWebEngine (Chromium/Blink), and is designed to make lock-down very simple and painless.
 
-It was originally conceived for use in library catalog terminals, when it became clear that browsers with ever-growing feature lists like Firefox and Chrome were too much work to lock down correctly and completely.  It was also designed to be easily configurable using a simple text file that can be hand-edited in a terminal over ssh across a slow WAN, so no databases, XML, or crazy binaries here.
+It was originally conceived for use in library catalog terminals, when it became clear that browsers with ever-growing feature lists like Firefox and Chrome were too much work to lock down correctly and completely.  It was also designed to be easily configurable using a simple text file that can be hand-edited in a terminal over SSH across a slow WAN, so no databases, XML, or crazy binaries here.
 
 ADMBrowser is a fork of WCGBrowser, with these key differences:
 
 - WCGBrowser was based on QtWebKit, ADMBrowser is based on QtWebEngine
-- WCGBrowser supports Python2 and Python3.  ADMBrowser will only actively support Python3.
-- WCGBrowser runs with Qt4 or Qt5.  ADMBrowser requires Qt5 (5.4 or higher).
+- WCGBrowser supports Python 2 and Python 3.  ADMBrowser requires Python 3.
+- WCGBrowser runs with Qt4 or Qt5.  ADMBrowser requires Qt5 (5.5 or higher).
 - The command line and configuration syntax may differ slightly.
 
-*ADMBROWSER IS CURRENTLY ALPHA QUALITY*  Many features are broken or unavailable simply because QtWebEngine is young and does things differently than QtWebKit.
+ADMBROWSER IS CURRENTLY BETA QUALITY
+------------------------------------
+
+Many features that were in WCGBrowser are broken or unavailable simply because QtWebEngine does things differently than QtWebKit.
 
 
 Features
@@ -39,14 +42,14 @@ Features
 - (Optional) Whitelisting of hosts & domains
 - 'Screensaver' mode to display a specified URL when idle
 - Printing support
-- Customizable error screens
+- Custom error screens
 - Much, much more...
 
 Requirements
 ============
 
 - Python 3
-- PyQT5 (v.5.5 or higher)
+- PyQt5 (v.5.5 or higher)
 - Python YAML library (http://pyyaml.org)
 
 It should work on any platform, but it's only been tested on Arch Linux.
@@ -56,32 +59,32 @@ Usage
 
 The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
 
-    python browser.py
+    python admbrowser.py
 
-At a minimum, you need to specify a "start url" using either the config file or the "-l" switch, or else the browser isn't much use.  Advanced configuration is probably best done in the configuration file, but many basic features can be enabled or disabled at the command line using these switches:
+At a minimum, you need to specify a `start_url` using either the config file or the `-l` switch, or else the browser isn't much use.  Advanced configuration is probably best done in the configuration file, but many basic features can be enabled or disabled at the command line using these switches:
 
-====================    =====================================================================================================================================
- Switch                 Description
-====================    =====================================================================================================================================
---debug_log             Send debugging output to specified file
---size                  Set the initial window size as "<width>x<height>" (e.g. "800x600"), "max" for maximized, or "full" for full-screen.
---proxy_server          Set the proxy server host and port, in the form <host>:<port>
--c, --config-file       Specify a configuration file to use
--d, --debug             Provide debugging output to stdout
--e, --allow_external    Allow the browser to open content in external programs via MIME type
--g, --allow_plugins     Allow the use of plugins like Flash, Java, etc.
--h, --help              Show quick help on command line syntax
--i, --icon-theme        The icon theme to use.  You'll need to install these themes yourself
--l, --url               The "start location" for the browser.  This is the initial URL it will load, and where it will return when reset.
--n, --no-navigation     Turn off the navigation panel (back, forward, home, shortcuts, etc).  Make sure your actual web application is fully navigable!
--p, --popups            Enable the creation of new windows when a link is clicked that opens in a new window, or javascript tries to open a window
--t, --timeout           The timeout for the inactivity monitor.  After this many seconds of inactivity, reset the browser
--u, --user              Set the default username to be sent when a site requests authentication
--w, --password          Set the default password to be sent when a site requests authentication
--z, --zoom              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
-====================    =====================================================================================================================================
+========================    =============================================================================================================================
+ Switch                     Description
+========================    =============================================================================================================================
+`--debug_log`               Send debugging output to specified file
+`--size`                    Set the initial window size as "<width>x<height>" (e.g. "800x600"), "max" for maximized, or "full" for full-screen.
+`--proxy_server`            Set the proxy server host and port, in the form <host>:<port>
+`-c`, `--config-file`       Specify a configuration file to use
+`-d`, `--debug`             Provide debugging output to `stdout`
+`-e`, `--allow_external`    Allow the browser to open content in external programs via MIME type
+`-g`, `--allow_plugins`     Allow the use of plugins like Flash, Java, etc.
+`-h`, `--help`              Show quick help on command line syntax
+`-i`, `--icon-theme`        The icon theme to use.  You'll need to install these themes yourself
+`-l`, `--url`               The "start location" for the browser.  This is the initial URL it will load, and where it will return when reset.
+`-n`, `--no-navigation`     Turn off the navigation panel (back, forward, home, shortcuts, etc).
+`-p`, `--popups`            Enable the creation of new windows when a link is clicked that opens in a new window, or javascript tries to open a window
+`-t`, `--timeout`           The timeout for the inactivity monitor.  After this many seconds of inactivity, reset the browser
+`-u`, `--user`              Set the default username to be sent when a site requests authentication
+`-w`, `--password`          Set the default password to be sent when a site requests authentication
+`-z`, `--zoom`              The default zoom factor for content.  0 ignores this.  1 is default, 2 would be double size, 0.5 would be half-size, etc.
+========================    =============================================================================================================================
 
-ADMBrowser also accepts the built-in Qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at http://doc.qt.digia.com/qt/qapplication.html#QApplication.
+ADMBrowser also accepts the built-in Qt command-line arguments, which provide some low-level overrides.  Documentation of these switches can be found at https://doc.qt.io/qt-5/qapplication.html#QApplication.
 
 Configuration File
 ==================
@@ -93,9 +96,9 @@ Option Name            Default Value      Explanation
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 allow_external_content False              Whether or not to allow non-html content, e.g. PDF files.  If this is true, you need to specify a content handler for the MIME type or a 404 error, "Network Error", or blank page will likely be displayed to the user.
 allow_plugins          False              If true, enables the use of plugins like flash, java, etc.
-allow_popups           False              Whether or not to allow navigation that requires opening a new browser window, such as javascript "window.open()" calls or links with a target of "_blank".  If False, the navigation will be ignored.  If true, a new window will be created as expected.
-force_js_confirm       "ask"              If set to "accept" or "deny", will override any JavaScript are-you-sure-you-want-to-exit dialog boxes with the specified answer, if set to "ask" (the default) will ask the user each time.
-suppress_alerts        False              If True, blocks JavaScript popup alerts from appearing, or shows them when False.
+allow_popups           False              Whether or not to allow navigation that requires opening a new browser window, such as JavaScript `window.open()` calls or links with a target of `"_blank"`.  If `False`, the navigation will be ignored.  If `True`, a new window will be created as expected.
+force_js_confirm       "ask"              If set to `"accept"` or `"deny"`, will override any JavaScript are-you-sure-you-want-to-exit dialog boxes with the specified answer, if set to `"ask"` (the default) will ask the user each time.
+suppress_alerts        False              If `True`, blocks JavaScript popup alerts from appearing, or shows them when `False`.
 allow_printing         False              Enable printing of web pages from the context menu or toolbar.
 print_settings         (empty)            Specify default printer settings, see below.
 default_password       (empty)            default password to send when pages request authentication
@@ -103,22 +106,22 @@ default_user           (empty)            default username to send when pages re
 icon_theme             (qt5 default)      Icon theme to use for navigation icons
 navigation             True               Display the navigation bar at the top (back/forward/reload/bookmarks/quit)
 navigation_layout      (see below)        Sets the layout of the navigation bar.  See the detailed explanation below.
-network_down_html      (empty)            *CURRENTLY_BROKEN* The full path to a file containing HTML which will be displayed when the start_url page cannot be loaded, which probably indicates some kind of network error.
+network_down_html      (empty)            *CURRENTLY_BROKEN* The full path to a file containing HTML which will be displayed when the `start_url` page cannot be loaded, which probably indicates some kind of network error.
 page_unavailable_html  (empty)            *CURRENTLY_BROKEN* The full path to a file containing HTML which will be displayed when a page cannot be loaded, either because it's not accessible or blocked by security restrictions.
-privacy_mode           True               Enable or disable "private browsing mode" on the webkit widget.
+privacy_mode           True               Enable or disable private browsing mode
 user_agent             (qt5 default)      Overrides the default user agent string.
-proxy_server           (empty)            Sets the proxy server string for HTTP proxy.  Takes the form "host:port", or just "host" if you want to use the default port of 8080.
-quit_button_mode       reset              Just like timeout_mode, only this is the action taken when the quit button is pressed (same options)
+proxy_server           (empty)            Sets the proxy server string for HTTP proxy.  Takes the form `host:port`, or just `host` if you want to use the default port of 8080.
+quit_button_mode       reset              Just like `timeout_mode`, only this is the action taken when the quit button is pressed (same options)
 quit_button_text       "I'm &Finished"    Text to display on the quit/reset button.  Can include an accelerator indicator (&).
-screensaver_url        about:blank        The URL to visit when idle.  Only matters when timeout_mode is 'screensaver' and 'timeout' is nonzero.
-ssl_mode               strict             Defines how the browser handles ssl certificate errors.  "strict" will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
-start_url              about:blank        The starting URL or "home page"
-stylesheet             (empty)            Filename of a qss stylesheet to use for styling the application window.  See example file.
+screensaver_url        about:blank        The URL to visit when idle.  Only matters when timeout_mode is `"screensaver"` and `"timeout"` is nonzero.
+ssl_mode               strict             Defines how the browser handles SSL certificate errors.  `"strict"` will just give an error and prevent access to the problematic URL.  "ignore" will silently ignore the errors and allow access.
+start_url              about:blank        The starting URL
+stylesheet             (empty)            Filename of a QSS-format stylesheet to use for styling the application window.  See example file.
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
-timeout_mode           reset              The action performed on inactivity timeout.  Values can be "reset" (to return to the start URL and clear history), "close" (to close the program), or 'screensaver' (to display the screensaver_url while idle)
+timeout_mode           reset              The action performed on inactivity timeout.  Values can be `"reset"` (to return to the start URL and clear history), `"close"` (to close the program), or `"screensaver"` (to display the `screensaver_url` while idle)
 whitelist              (empty)            A list of web domains or hosts to allow access to (see below).
-window_size            "max"              Make the window default to this size.  Can be <width>x<height> (e.g. 800x600), 'max' for maximized, or "full" for fullscreen.
-zoom_factor            1.0                The amount of zoom applied to pages.  .5 is half size, 2.0 is double size, etc.
+window_size            "max"              Make the window default to this size.  Can be `<width>x<height>` (e.g. `"800x600"`), `"max"` for maximized, or `"full"` for fullscreen.
+zoom_factor            1.0                The amount of zoom applied to pages.  `.5` is half size, `2.0` is double size, etc.
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 
 Bookmarks
@@ -186,6 +189,8 @@ If you don't want to use the whitelist feature, just comment it out, leave the l
 What the whitelist does
 ~~~~~~~~~~~~~~~~~~~~~~~
 
+
+
 You give the whitelist a list of *domains* or *hosts*, like this::
 
     whitelist: ["somehost.example.com", "some-local-host", "mydomain.org"]
@@ -194,24 +199,24 @@ Whenever the user clicks a link or otherwise tries to navigate to a page, the ho
 
 Some things are automatic:
 
-- The start_url host is automatically whitelisted
+- The `start_url` host is automatically whitelisted
 - Bookmark hosts are automatically whitelisted
 - Subdomains are also automatically whitelisted.  Thus, if you whitelist "example.com", then "foo.example.com" will be whitelisted as well (though "foo-example.com" will not, since that's actually a different domain).
 
-If you just want to whitelist the start_url and bookmark urls and nothing else, you can just do this in the config::
+If you just want to whitelist the start_url and bookmark urls and nothing else, you can just do this in the configuration file::
 
     whitelist: True
 
-When relying on the automatic whitelisting, it's important to understand that the complete *host* string of these URLs is whitelisted.  So for example, if your start_url is "http://example.com", "example.com" will be added to the whitelist (and thus all subdomains of example.com, such as foo.example.com, bar.example.com, etc.).  If you specify "http://www.example.com" as the start_url, though, "www.example.com" is added to the whitelist.  Thus, "foo.example.com" would *not* be whitelisted.
+When relying on the automatic whitelisting, it's important to understand that the complete *host* string of these URLs is whitelisted.  So for example, if your `start_url` is "http://example.com", "example.com" will be added to the whitelist (and thus all subdomains of example.com, such as foo.example.com, bar.example.com, etc.).  If you specify "http://www.example.com" as the `start_url`, though, "www.example.com" is added to the whitelist.  Thus, "foo.example.com" would *not* be whitelisted.
 
 Also note that if you whitelist a URL that just forwards you to another host, you need to specify both hosts in the whitelist.
 
-What the whitelist doesn't do
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What the whitelist does NOT do
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- The whitelist does not block **content** on a whitelisted page from being displayed, regardless of where the content is hosted.  As long as the page's URL is acceptable, all the content is displayed.  So, for example, if you have your images and scripts (or ads!) on a separate content delivery network, you don't need to whitelist that server.  You only need to whitelist hosts/domains of URLs to which the user is explicitly navigating (via hyperlink, bookmark, javascript forward, etc) -- in other words, the URL that would show up in a normal browser's location bar.
+- The whitelist does not block **content** on a whitelisted page from being displayed, regardless of where the content is hosted.  As long as the page's URL is acceptable, all the content is displayed.  So, for example, if you have your images and scripts (or ads!) on a separate content delivery network, you don't need to whitelist that server.  You only need to whitelist hosts/domains of URLs to which the user is explicitly navigating (via hyperlink, bookmark, JavaScript forward, etc) -- in other words, the URL that would show up in a normal browser's location bar.
 - The whitelist cannot take an actual path or filename, nor does it check the port, protocol, username, or any other component of the URL other than the host or domain.  Sorry.
-- If you whitelist a host, its IP will *not* be automatically whitelisted (and vice-versa); nor will a fully-qualified hostname in the whitelist automatically whitelist the hostname by itself (or vice-versa).  A url is *only* allowed when its literal hostname matches a whitelist entry.
+- If you whitelist a host, its IP will *not* be automatically whitelisted (and vice-versa); nor will a fully-qualified hostname in the whitelist automatically whitelist the hostname by itself (or vice-versa).  A URL is *only* allowed when its literal hostname matches a whitelist entry.
 
 Screensaver Mode
 ----------------
@@ -229,18 +234,18 @@ This configuration would do the following:
 - After 30 minutes of no user activity (mouse/keyboard/touchscreen/etc), the navigation bar will hide and http://example.com/slides will be displayed.
 - As soon as a user steps up and generates activity (moves a mouse, touches the screen, etc), the navigation bar (if configured) will reappear, and the browser will load http://example.com/kiosk.
 
-The screensaver_url could be, for example, an image rotator, a page with ads, a welcome message, etc.  It doesn't really matter, but keep in mind the user can't actually interact with the screensaver page, because as soon as they touch a mouse or keyboard, the start_url will load.
+The `screensaver_url` could be, for example, an image rotator, a page with ads, a welcome message, etc.  It doesn't really matter, but keep in mind the user can't actually interact with the screensaver page, because as soon as they touch a mouse or keyboard, the `start_url` will load.
 
 Proxy Server
 ------------
 
 ADMBrowser will allow you to set a host (name or IP) and port number for an HTTP proxy.  HTTPS, FTP, SOCKS, or authenticated proxy is not currently supported.  You can set the proxy settings one of three ways:
 
-- The environment variable "http_proxy" is respected
-- The CLI switch --proxy_server
-- The configuration file option "proxy_server"
+- The environment variable `http_proxy` is respected
+- The CLI switch `--proxy_server`
+- The configuration file option `proxy_server`
 
-To set the proxy server, use the format "host:port", as in these examples::
+To set the proxy server, use the format `host:port`, as in these examples::
 
     proxyserver.mynetwork.local:3128
     localhost:8080
@@ -248,13 +253,13 @@ To set the proxy server, use the format "host:port", as in these examples::
 
 If you neglect to include a port, and just put an IP address or hostname, the port 8080 will be used by default.
 
-**NOTE** This feature may not work on some OS. It currently relies on setting the http_proxy environment variable (regardless of which method you use to configure it), which may not be respected on all systems.  It definitely works on Linux, and probably on any unixlike system.
+**NOTE** This feature may not work on some OS. It currently relies on setting the `http_proxy` environment variable (regardless of which method you use to configure it), which may not be respected on all systems.  It definitely works on Linux, and probably on any unix-like system.
 
 
 Print Settings
 --------------
 
-ADMBrowser supports configuring default printer settings and allows printing without showing a dialog box. Options are set with the "print_settings" variable. For example::
+ADMBrowser supports configuring default printer settings and allows printing without showing a dialog box. Options are set with the `print_settings` variable. For example::
 
     print_settings:
         silent: True
@@ -268,11 +273,11 @@ Option Name            Default Value        Explanation
 ====================== =================    ==============================================================================================================================================================
 silent                 False                When True, ADMBrowser will print immediately without showing the printing dialog box.
 orientation            "portrait"           Specifies printing in portrait or landscape orientation.
-size_unit              "millimeter"         Specifies what unit of measure used by the paper_size and margin variables. Can be "millimeter", "point", "inch", "pica", "didot", "cicero", or "devicepixel".
-margins                (printer default)    Specifies the printer margins as a list in the form: [left, top, right, bottom]. Example: [5, 3.5, 6, 2.4]. Units are specified by the size_unit variable.
-paper_size             (printer default)    Specifies the paper size as a list in the form: [width, height]. Example: [500, 650.5]. Units are specified by the size_unit variable.
-resolution             (printer default)    Specifies the printer's resolution in ppi (pixels per inch).
-mode                   "screen"             Sets what resolution the printer will use, "screen": the screen's resolution (the default) or "high": the printer's maximum resolution
+size_unit              "millimeter"         Specifies what unit of measure used by the paper_size and margin variables. Can be `"millimeter"`, `"point"`, `"inch"`, `"pica"`, `"didot"`, `"cicero"`, or `"devicepixel"`.
+margins                (printer default)    Specifies the printer margins as a list in the form: [left, top, right, bottom]. Example: [5, 3.5, 6, 2.4]. Units are specified by the `size_unit` variable.
+paper_size             (printer default)    Specifies the paper size as a list in the form: [width, height]. Example: [500, 650.5]. Units are specified by the `size_unit` variable.
+resolution             (printer default)    Specifies the printer's resolution in PPI (pixels per inch).
+mode                   "screen"             Sets what resolution the printer will use, `"screen"`: the screen's resolution (the default) or `"high"`: the printer's maximum resolution
 ====================== =================    ==============================================================================================================================================================
 
 Bugs and Limitations
@@ -280,7 +285,7 @@ Bugs and Limitations
 
 The following are known limitations:
 
-- There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide auth credentials in the URL (in a bookmark/start_url).
+- There is no password dialog when a page requests authentication.  You can set a single user/password set in the config file to be sent whenever a site does request it, or provide authentication credentials in the URL (in a bookmark/`start_url`).
 - Only one popup window can exist at a time (if they're enabled at all).
 
 The following issues showed up with the port from QtWebKit to QtWebEngine:
@@ -303,13 +308,12 @@ Coding Standards
 
 If you're contributing code, please follow these best practices:
 
-- Follow PEP8; use a linter/checker like pyflakes, pep8, or pylint and
-  make sure your code doesn't generate errors.
+- Follow PEP8; use a linter/checker like `pyflakes`, `pep8`, or `pylint` and make sure your code doesn't generate errors.
 
   - This includes the 79 character limit.  Yes, I'm like that.
   - Use snake_case variables, not camelCase (except for PyQt stuff we can't change)
-  - Use .format() rather than the old printf-style (%) substitution
-  - Remember that code should work in Py3.x with pyqt5
+  - Use f-strings rather than `format()` or old-style `%` variable substitution
+  - Remember that code should work in Python 3.6 and PyQt5.
 
 - Please document per PEP257; functions & classes need a docstring.
 - Fork the project on GitHub, make your changes, and submit a pull request.
