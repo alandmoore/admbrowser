@@ -296,7 +296,23 @@ The following issues showed up with the port from QtWebKit to QtWebEngine:
 
 If you find bugs, please report them as an "issue" at the project's github page: http://github.com/alandmoore/admbrowser/issues. If your "bug" is really a feature request, see below.
 
+Raspberry Pi Support
+--------------------
 
+ADMBrowser *can* work on a Raspberry Pi, in theory, **BUT NOT ON RASPBIAN 10**.  ADMBrowser requires QtWebEngine, which (as of January 2020) is not packaged for Raspbian 10.
+
+In order to use ADMBrowser, you need to use a distribution that provides a working version of QtWebEngine.  As of January 2020, various solutions have been tested with the following results (tested on Pi 3b+):
+
+========================= ====== ======= ====================================================================================================
+Distro                    Arch   Works?  Explanation
+========================= ====== ======= ====================================================================================================
+OpenSuse Leap 15.1         arm64 Yes     Seems to work flawlessly, though somewhat slow.
+Ubuntu Mate 18.04          armhf Almost  Launches, but segfaults often while loading pages.
+Ubuntu Server 19.10        arm64 No      PyQt scripts segfault on creating QApplication if QtWebEngineWidgets is imported.
+FedBerry 27                armv7 No      SEGV_MAPERR when trying to show QWebEngineView
+========================= ====== ======= ====================================================================================================
+
+See issue #16 for ongoing discussion of Raspberry Pi support.
 
 Contributing
 ============
