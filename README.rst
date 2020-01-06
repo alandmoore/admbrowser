@@ -48,11 +48,12 @@ Features
 Requirements
 ============
 
-- Python 3
+- Python 3.6 or later
+  - You need the dataclasses library if you're using < 3.7
 - PyQt5 (v.5.5 or higher)
 - Python YAML library (http://pyyaml.org)
 
-It should work on any platform, but it's only been tested on Arch Linux.
+It should work on any platform, but it's only been tested on Arch Linux, Debian, and Ubuntu.
 
 Usage
 =====
