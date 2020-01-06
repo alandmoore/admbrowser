@@ -307,6 +307,7 @@ In order to use ADMBrowser, you need to use a distribution that provides a worki
 Distro                    Arch   Works?  Explanation
 ========================= ====== ======= ====================================================================================================
 OpenSuse Leap 15.1         arm64 Yes     Seems to work flawlessly, though somewhat slow.
+Ubuntu Mate 20.04 alpha    armhf Yes     Seems to work flawlessly, but very slow.  Slower than OpenSuse.
 Ubuntu Mate 18.04          armhf Almost  Launches, but segfaults often while loading pages.
 Ubuntu Server 19.10        arm64 No      PyQt scripts segfault on creating QApplication if QtWebEngineWidgets is imported.
 FedBerry 27                armv7 No      SEGV_MAPERR when trying to show QWebEngineView
