@@ -58,7 +58,7 @@ It should work on any platform, but it's only been tested on Arch Linux, Debian,
 Usage
 =====
 
-The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
+The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the admbrowser.py executable, or launch it using python, like so::
 
     python admbrowser.py
 
