@@ -1,6 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 """
-Thisq is the main script for ADMBrowser, a kiosk-oriented web browser
+This is the main script for ADMBrowser, a kiosk-oriented web browser
 Written by Alan D Moore, http://www.alandmoore.com
 Released under the GNU GPL v3
 """
@@ -42,7 +42,9 @@ class MainWindow(qtw.QMainWindow):
         self.debug = debug or (lambda x: None)
         self.config = config
 
-        self.setWindowTitle("Browser")
+        # Set the window icon and title
+        self.setWindowIcon(qtg.QIcon(self.config.window_icon))
+        self.setWindowTitle(self.config.window_title)
 
         # self.popup will hold a reference to the popup window
         # if it gets opened
@@ -381,7 +383,6 @@ class MainWindow(qtw.QMainWindow):
             self.nav_items["zoom_in"].setEnabled(True)
         else:
             self.nav_items["zoom_out"].setEnabled(False)
-
 
     def show_error(self, error):
         qtw.QMessageBox.critical(self, "Error", error)
