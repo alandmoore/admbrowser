@@ -1,4 +1,4 @@
-from PyQt5 import QtCore as qtc
+from PyQt6 import QtCore as qtc
 
 
 class InactivityFilter(qtc.QTimer):
@@ -10,11 +10,11 @@ class InactivityFilter(qtc.QTimer):
     activity = qtc.pyqtSignal()
 
     monitored_events = (
-        qtc.QEvent.MouseMove,
-        qtc.QEvent.MouseButtonPress,
-        qtc.QEvent.HoverMove,
-        qtc.QEvent.KeyPress,
-        qtc.QEvent.KeyRelease
+        qtc.QEvent.Type.MouseMove,
+        qtc.QEvent.Type.MouseButtonPress,
+        qtc.QEvent.Type.HoverMove,
+        qtc.QEvent.Type.KeyPress,
+        qtc.QEvent.Type.KeyRelease
     )
 
     def __init__(self, timeout=0, parent=None):

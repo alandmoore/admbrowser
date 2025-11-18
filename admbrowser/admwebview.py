@@ -1,14 +1,15 @@
 import subprocess
 import re
 
-from PyQt5 import QtGui as qtg
-from PyQt5 import QtCore as qtc
-from PyQt5 import QtWidgets as qtw
+from PyQt6 import QtGui as qtg
+from PyQt6 import QtCore as qtc
+from PyQt6 import QtWidgets as qtw
 
-from PyQt5 import QtPrintSupport as qtp
-from PyQt5 import QtWebEngineWidgets as qtwe
+from PyQt6 import QtPrintSupport as qtp
+from PyQt6 import QtWebEngineWidgets as qtwe
+from PyQt6 import QtWebEngineCore as qtwc
 
-from PyQt5.QtNetwork import (
+from PyQt6.QtNetwork import (
     QNetworkRequest
 )
 
@@ -91,21 +92,21 @@ class AdmWebView(qtwe.QWebEngineView):
         self.loadFinished.connect(self.onLoadFinished)
 
     def _configureSettings(self, config):
-        settings = qtwe.QWebEngineSettings.defaultSettings
+        settings = qtwc.QWebEngineProfile.defaultProfile().settings
 
         # Popup settings
         settings().setAttribute(
-            qtwe.QWebEngineSettings.JavascriptCanOpenWindows,
+            qtwc.QWebEngineSettings.WebAttribute.JavascriptCanOpenWindows,
             config.allow_popups
         )
         # local storage
         settings().setAttribute(
-            qtwe.QWebEngineSettings.LocalStorageEnabled,
+            qtwc.QWebEngineSettings.WebAttribute.LocalStorageEnabled,
             True
         )
         # Plugins
         settings().setAttribute(
-            qtwe.QWebEngineSettings.PluginsEnabled,
+            qtwc.QWebEngineSettings.WebAttribute.PluginsEnabled,
             config.allow_plugins
         )
         self.debug(

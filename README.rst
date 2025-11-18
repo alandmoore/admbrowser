@@ -12,7 +12,7 @@ Contributors:
 Description
 ===========
 
-ADMBrowser is a browser specifically for use on web kiosks.  It's based on PyQt5 and QtWebEngine (Chromium/Blink), and is designed to make lock-down very simple and painless.
+ADMBrowser is a browser specifically for use on web kiosks.  It's based on PyQt6 and QtWebEngine (Chromium/Blink), and is designed to make lock-down very simple and painless.
 
 It was originally conceived for use in library catalog terminals, when it became clear that browsers with ever-growing feature lists like Firefox and Chrome were too much work to lock down correctly and completely.  It was also designed to be easily configurable using a simple text file that can be hand-edited in a terminal over SSH across a slow WAN, so no databases, XML, or crazy binaries here.
 
@@ -20,7 +20,7 @@ ADMBrowser is a fork of WCGBrowser, with these key differences:
 
 - WCGBrowser was based on QtWebKit, ADMBrowser is based on QtWebEngine
 - WCGBrowser supports Python 2 and Python 3.  ADMBrowser requires Python 3.
-- WCGBrowser runs with Qt4 or Qt5.  ADMBrowser requires Qt5 (5.5 or higher).
+- WCGBrowser runs with Qt4 or Qt5.  ADMBrowser requires Qt6.
 - The command line and configuration syntax may differ slightly.
 
 ADMBROWSER IS CURRENTLY BETA QUALITY
@@ -50,7 +50,7 @@ Requirements
 
 - Python 3.6 or later
   - You need the dataclasses library if you're using < 3.7
-- PyQt5 (v.5.5 or higher)
+- PyQt6
 - Python YAML library (http://pyyaml.org)
 
 It should work on any platform, but it's only been tested on Arch Linux, Debian, and Ubuntu.
@@ -134,21 +134,21 @@ Bookmarks are created in a YAML list called "bookmarks" with this format::
 
     bookmarks:
       1:
-        name: "Bookmark Name"
-        url: "http://bookmark.url/"
-        description: "A short description of the bookmark, for the tooltip"
+	name: "Bookmark Name"
+	url: "http://bookmark.url/"
+	description: "A short description of the bookmark, for the tooltip"
 
       2:
-        name: "Another bookmark name":
-        url: "http://example.com/some_bookmark"
-        description: "A short description of this bookmark"
+	name: "Another bookmark name":
+	url: "http://example.com/some_bookmark"
+	description: "A short description of this bookmark"
 
 Bookmark names can include an ampersand to specify an accelerator key.  You can also specify bookmark entries like so::
 
     bookmarks:
       "Bookmark Name":
-        url: "http://bookmark.url/"
-        description: "A short description of the bookmark, for the tooltip"
+	url: "http://bookmark.url/"
+	description: "A short description of the bookmark, for the tooltip"
 
 This is more compact, but the downside is that you have no control over the order of the bookmarks (they are ordered by key, so it'll be alphabetical by name).  This mode is really for backwards compatibility, but if you have a lot of bookmarks that you want alphabetized and want to save some typing, this may be the way to go.
 
@@ -265,9 +265,9 @@ Print Settings
 ADMBrowser supports configuring default printer settings and allows printing without showing a dialog box. Options are set with the `print_settings` variable. For example::
 
     print_settings:
-        silent: True
-        margins: [5, 5, 3, 3]
-        orientation: "landscape"
+	silent: True
+	margins: [5, 5, 3, 3]
+	orientation: "landscape"
 
 The following options are supported:
 

@@ -15,10 +15,11 @@ import datetime
 
 import yaml
 
-from PyQt5 import QtGui as qtg
-from PyQt5 import QtCore as qtc
-from PyQt5 import QtWidgets as qtw
-from PyQt5 import QtWebEngineWidgets as qtwe
+from PyQt6 import QtGui as qtg
+from PyQt6 import QtCore as qtc
+from PyQt6 import QtWidgets as qtw
+from PyQt6 import QtWebEngineWidgets as qtwe
+from PyQt6 import QtWebEngineCore as qtwc
 
 from . import messages as msg
 from .admwebview import AdmWebView
@@ -97,7 +98,7 @@ class MainWindow(qtw.QMainWindow):
         Just a shortcut function Originally borrowed from
         'Rapid GUI Development with PyQT' by Mark Summerset
         """
-        action = qtw.QAction(text, self)
+        action = qtg.QAction(text, self)
         if icon is not None:
             action.setIcon(qtg.QIcon.fromTheme(
                 icon, qtg.QIcon(f":/navigation/{icon}.png")
@@ -119,9 +120,9 @@ class MainWindow(qtw.QMainWindow):
 
         # create private/nonprivate webprofile per settings
         webprofile = (
-            qtwe.QWebEngineProfile()
+            qtwc.QWebEngineProfile()
             if self.config.privacy_mode
-            else qtwe.QWebEngineProfile.defaultProfile()
+            else qtwc.QWebEngineProfile.defaultProfile()
         )
         self.debug(f"Browser session is private: {webprofile.isOffTheRecord()}")
 
@@ -196,14 +197,14 @@ class MainWindow(qtw.QMainWindow):
                 movable=False,
                 floatable=False
             )
-            self.addToolBar(qtc.Qt.TopToolBarArea, self.navigation_bar)
+            self.addToolBar(qtc.Qt.ToolBarArea.TopToolBarArea, self.navigation_bar)
 
             #  Standard navigation tools
             self.nav_items = {
-                "back": self.browser_window.pageAction(AdmWebPage.Back),
-                "forward": self.browser_window.pageAction(AdmWebPage.Forward),
-                "refresh": self.browser_window.pageAction(AdmWebPage.Reload),
-                "stop": self.browser_window.pageAction(AdmWebPage.Stop),
+                "back": self.browser_window.pageAction(AdmWebPage.WebAction.Back),
+                "forward": self.browser_window.pageAction(AdmWebPage.WebAction.Forward),
+                "refresh": self.browser_window.pageAction(AdmWebPage.WebAction.Reload),
+                "stop": self.browser_window.pageAction(AdmWebPage.WebAction.Stop),
                 "quit": self.createAction(
                     self.config.quit_button_text,
                     qb_mode_callbacks.get(
@@ -254,8 +255,8 @@ class MainWindow(qtw.QMainWindow):
                     # an expanding spacer.
                     spacer = qtw.QWidget()
                     spacer.setSizePolicy(
-                        qtw.QSizePolicy.Expanding,
-                        qtw.QSizePolicy.Preferred
+                        qtw.QSizePolicy.Policy.Expanding,
+                        qtw.QSizePolicy.Policy.Preferred
                     )
                     self.navigation_bar.addWidget(spacer)
                 elif item == "bookmarks":
@@ -507,7 +508,7 @@ def main():
     # Create the qapplication object,
     # so it can interpret the qt-specific CLI args
     app = ADMBrowserApp(sys.argv)
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == "__main__":

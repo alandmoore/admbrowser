@@ -1,6 +1,6 @@
 # ### ADMWEBPAGE #### #
 
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
+from PyQt6.QtWebEngineCore import QWebEnginePage
 
 from . import messages as msg
 
