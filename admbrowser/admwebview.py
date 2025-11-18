@@ -69,7 +69,7 @@ class AdmWebView(qtwe.QWebEngineView):
 
         # add printing to context menu if it's allowed
         if config.allow_printing:
-            self.print_action = qtw.QAction("Print", self)
+            self.print_action = qtg.QAction("Print", self)
             self.print_action.setIcon(qtg.QIcon.fromTheme("document-print"))
             self.print_action.triggered.connect(self.print_webpage)
             self.page().printRequested.connect(self.print_webpage)
