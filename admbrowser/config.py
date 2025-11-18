@@ -150,11 +150,19 @@ class Config:
         ),
         "user_agent": OptionDefinition(),
         "whitelist": OptionDefinition(datatype=None),
+        "window_icon": OptionDefinition(
+            default=None,
+            help=("Window icon, default is 'web-browser'")
+        ),
         "window_size": OptionDefinition(
             default="max",
             switches=("--size",),
             help=("Window size in pixels (WxH), 'max' for maximized,"
                      " or 'full' for full-screen")
+        ),
+        "window_title": OptionDefinition(
+            default="Browser",
+            help=("Window title, default is 'Browser'")
         ),
         "zoom_factor": OptionDefinition(
             default=1.0,

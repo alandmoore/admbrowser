@@ -58,7 +58,7 @@ It should work on any platform, but it's only been tested on Arch Linux, Debian,
 Usage
 =====
 
-The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the browser.py executable, or launch it using python, like so::
+The included admbrowser.yaml file shows a documented example configuration.  To use it,  copy it to /etc/admbrowser.yaml, ~/.admbrowser.yaml, or specify it with the -c (--config-file) switch.  You can make the admbrowser.py executable, or launch it using python, like so::
 
     python admbrowser.py
 
@@ -121,7 +121,9 @@ stylesheet             (empty)            Filename of a QSS-format stylesheet to
 timeout                0                  Number of seconds of inactivity before the browser closes or resets itself. A value of 0 disables the feature.
 timeout_mode           reset              The action performed on inactivity timeout.  Values can be `"reset"` (to return to the start URL and clear history), `"close"` (to close the program), or `"screensaver"` (to display the `screensaver_url` while idle)
 whitelist              (empty)            A list of web domains or hosts to allow access to (see below).
+window_icon            (empty)            The full path of the icon file to be shown by the window manager.
 window_size            "max"              Make the window default to this size.  Can be `<width>x<height>` (e.g. `"800x600"`), `"max"` for maximized, or `"full"` for fullscreen.
+window_title           "Browser"          A custom window title to be shown by the window manager.
 zoom_factor            1.0                The amount of zoom applied to pages.  `.5` is half size, `2.0` is double size, etc.
 ====================== ===============    ===============================================================================================================================================================================================================================================================
 
